@@ -1,0 +1,36 @@
+services:
+  # PostgreSQL Database
+  - type: database
+    name: botgrandfather-db
+    databaseName: telegram-bot-platform
+    user: botgrandfather
+    plan: starter
+    ipAllowList: []
+
+  # Web Service (Node.js backend)
+  - type: web
+    name: botgrandfather-api
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: npm run start:prod
+    plan: starter
+    envVars:
+      # Environment
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      # Database - will be auto-populated by Render
+      - key: DATABASE_URL
+        fromDatabase:
+          name: botgrandfather-db
+          property: connectionString
+      # Telegram Bot API
+      - key: TELEGRAM_BOT_API_URL
+        value: https://api.telegram.org
+      # Webhook Configuration
+      - key: WEBHOOK_HOST
+        sync: false
+        description: "Your Render web service URL (https://your-service.onrender.com)"
+      - key: WEBHOOK_PATH
+        value: /webhook
