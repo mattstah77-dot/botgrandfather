@@ -9,7 +9,7 @@ services:
   - type: web
     name: botgrandfather-api
     env: node
-    buildCommand: npm install && npm run build
+    buildCommand: npm install --include=dev && npx nest build
     startCommand: npm run start:prod
     plan: starter
     envVars:
