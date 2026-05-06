@@ -1,0 +1,34 @@
+import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { BotModule } from './bot/bot.module';
+import { WebhookModule } from './webhook/webhook.module';
+import { TemplateModule } from './templates/template.module';
+import { TelegramModule } from './telegram/telegram.module';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+import { Bot } from './bot/entities/bot.entity';
+import { UserState } from './bot/entities/user-state.entity';
+import { ProcessedUpdate } from './bot/entities/processed-update.entity';
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '.env',
+    }),
+    TypeOrmModule.forRoot({
+      type: 'postgres',
+      url: process.env.DATABASE_URL,
+      entities: [Bot, UserState, ProcessedUpdate],
+      synchronize: process.env.NODE_ENV !== 'production', // Use migrations in production
+    }),
+    BotModule,
+    WebhookModule,
+    TemplateModule,
+    TelegramModule,
+  ],
+  controllers: [AppController],
+  providers: [AppService],
+})
+export class AppModule {}

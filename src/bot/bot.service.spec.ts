@@ -1,0 +1,48 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { BotService } from './bot.service';
+import { Bot } from './entities/bot.entity';
+import { ProcessedUpdate } from './entities/processed-update.entity';
+import { TelegramService } from '../telegram/telegram.service';
+
+describe('BotService', () => {
+  let service: BotService;
+  let botRepository: Repository<Bot>;
+  let processedUpdateRepository: Repository<ProcessedUpdate>;
+  let telegramService: TelegramService;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        BotService,
+        {
+          provide: getRepositoryToken(Bot),
+          useClass: Repository,
+        },
+        {
+          provide: getRepositoryToken(ProcessedUpdate),
+          useClass: Repository,
+        },
+        {
+          provide: TelegramService,
+          useValue: {
+            validateToken: jest.fn(),
+            setWebhook: jest.fn(),
+            sendMessage: jest.fn(),
+            getWebhookInfo: jest.fn(),
+          },
+        },
+      ],
+    }).compile();
+
+    service = module.get<BotService>(BotService);
+    botRepository = module.get<Repository<Bot>>(getRepositoryToken(Bot));
+    processedUpdateRepository = module.get<Repository<ProcessedUpdate>>(getRepositoryToken(ProcessedUpdate));
+    telegramService = module.get<TelegramService>(TelegramService);
+  });
+
+  it('should be defined', () => {
+    expect(service).toBeDefined();
+  });
+});
