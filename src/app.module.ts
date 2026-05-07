@@ -22,7 +22,8 @@ import { ProcessedUpdate } from './bot/entities/processed-update.entity';
       type: 'postgres',
       url: process.env.DATABASE_URL,
       entities: [Bot, UserState, ProcessedUpdate],
-      synchronize: process.env.NODE_ENV !== 'production',
+      // MVP: synchronize auto-creates tables. For real production, use migrations.
+      synchronize: process.env.TYPEORM_SYNC !== 'false',
     }),
     BotModule,
     WebhookModule,
