@@ -1,9 +1,6 @@
-import { Controller, Post, Req, Res, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Body, Param, Res, HttpStatus } from '@nestjs/common';
 import type { Response } from 'express';
-import type { Request } from 'express';
 import { WebhookService } from './webhook.service';
-
-type RawBodyRequest<T extends Request = Request> = T & { rawBody?: Buffer };
 
 @Controller('webhook')
 export class WebhookController {
@@ -16,15 +13,13 @@ export class WebhookController {
    */
   @Post(':botId/:secret')
   async handleWebhook(
-    @Req() req: RawBodyRequest,
+    @Body() update: any,
+    @Param('botId') botId: string,
+    @Param('secret') secret: string,
     @Res() res: Response,
   ): Promise<void> {
     try {
-      const update = JSON.parse(req.body.toString());
       this.webhookService.validateUpdate(update);
-
-      const botId = req.params.botId as string;
-      const secret = req.params.secret as string;
 
       // Process asynchronously — never block Telegram response
       this.webhookService.processUpdate(botId, secret, update);
@@ -39,3 +34,4 @@ export class WebhookController {
     }
   }
 }
+
