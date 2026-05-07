@@ -120,11 +120,16 @@ export class TelegramService {
     botToken: string,
     chatId: number,
     text: string,
+    replyMarkup?: any,
   ): Promise<void> {
     try {
+      const body: Record<string, any> = { chat_id: chatId, text };
+      if (replyMarkup) {
+        body.reply_markup = replyMarkup;
+      }
       await this.request(botToken, 'sendMessage', {
         method: 'POST',
-        body: JSON.stringify({ chat_id: chatId, text }),
+        body: JSON.stringify(body),
       });
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
@@ -176,6 +181,27 @@ export class TelegramService {
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
       this.logger.error(`Failed to delete message: ${this.redactToken(msg)}`);
+    }
+  }
+
+  /**
+   * Answer callback query (removes loading spinner on inline button).
+   */
+  async answerCallbackQuery(
+    botToken: string,
+    callbackQueryId: string,
+    text?: string,
+  ): Promise<void> {
+    try {
+      const body: Record<string, any> = { callback_query_id: callbackQueryId };
+      if (text) body.text = text;
+      await this.request(botToken, 'answerCallbackQuery', {
+        method: 'POST',
+        body: JSON.stringify(body),
+      });
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Failed to answer callback query: ${this.redactToken(msg)}`);
     }
   }
 
