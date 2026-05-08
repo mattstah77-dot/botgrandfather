@@ -103,6 +103,9 @@ export class PlatformBotService implements OnModuleInit {
           { text: 'Template 2', callback_data: 'template:template2' },
           { text: 'Template 3', callback_data: 'template:template3' },
         ],
+        [
+          { text: '🎯 Lead Funnel', callback_data: 'template:lead-funnel' },
+        ],
       ],
     };
     await this.telegramService.sendMessage(PLATFORM_BOT_TOKEN, chatId, text, keyboard);
