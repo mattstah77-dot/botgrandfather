@@ -17,13 +17,13 @@ export class Lead {
   @Index()
   userId: bigint;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   username: string | null;
 
   @Column({ type: 'jsonb', default: {} })
   answers: Record<string, string>;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   contact: string | null;
 
   @CreateDateColumn()
