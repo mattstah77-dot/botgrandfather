@@ -10,6 +10,9 @@ import { template2ConfigSchema } from '../template2/template2.config.schema';
 import { Template3Handler } from '../template3/template3.handler';
 import { Template3Service } from '../template3/template3.service';
 import { template3ConfigSchema } from '../template3/template3.config.schema';
+import { LeadFunnelHandler } from '../lead-funnel/lead-funnel.handler';
+import { LeadFunnelService } from '../lead-funnel/lead-funnel.service';
+import { leadFunnelConfigSchema } from '../lead-funnel/lead-funnel.config.schema';
 
 export interface TemplateRegistryEntry {
   readonly name: string;
@@ -50,6 +53,36 @@ export const TEMPLATE_REGISTRY: Readonly<Record<string, TemplateRegistryEntry>> 
     configSchema: template3ConfigSchema,
     defaultConfig: {
       greetingMessage: 'Template 3 works',
+    },
+  },
+  'lead-funnel': {
+    name: 'lead-funnel',
+    handlerClass: LeadFunnelHandler as any,
+    serviceClass: LeadFunnelService as any,
+    configSchema: leadFunnelConfigSchema,
+    defaultConfig: {
+      businessName: 'My Business',
+      welcomeMessage: "Welcome! Let's find the best solution for you.",
+      completionMessage: 'Thank you! We will contact you soon.',
+      ownerChatId: '',
+      questions: [
+        {
+          id: 'service',
+          type: 'buttons',
+          question: 'What service are you interested in?',
+          options: ['Website Development', 'Advertising', 'SEO'],
+        },
+        {
+          id: 'budget',
+          type: 'buttons',
+          question: 'What is your budget?',
+          options: ['$500-$1000', '$1000-$5000', '$5000+'],
+        },
+      ],
+      finalAction: {
+        type: 'message',
+        text: 'Our manager will contact you soon.',
+      },
     },
   },
 };

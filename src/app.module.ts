@@ -11,6 +11,7 @@ import { AppService } from './app.service';
 import { Bot } from './bot/entities/bot.entity';
 import { UserState } from './bot/entities/user-state.entity';
 import { ProcessedUpdate } from './bot/entities/processed-update.entity';
+import { Lead } from './bot/entities/lead.entity';
 
 @Module({
   imports: [
@@ -21,8 +22,7 @@ import { ProcessedUpdate } from './bot/entities/processed-update.entity';
     TypeOrmModule.forRoot({
       type: 'postgres',
       url: process.env.DATABASE_URL,
-      entities: [Bot, UserState, ProcessedUpdate],
-      // MVP: synchronize auto-creates tables. For real production, use migrations.
+      entities: [Bot, UserState, ProcessedUpdate, Lead],
       synchronize: process.env.TYPEORM_SYNC !== 'false',
     }),
     BotModule,

@@ -6,11 +6,12 @@ import { TelegramModule } from '../telegram/telegram.module';
 import { Bot } from './entities/bot.entity';
 import { UserState } from './entities/user-state.entity';
 import { ProcessedUpdate } from './entities/processed-update.entity';
+import { Lead } from './entities/lead.entity';
 
 @Module({
   imports: [
     TelegramModule,
-    TypeOrmModule.forFeature([Bot, UserState, ProcessedUpdate]),
+    TypeOrmModule.forFeature([Bot, UserState, ProcessedUpdate, Lead]),
   ],
   controllers: [BotController],
   providers: [BotService],

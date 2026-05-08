@@ -22,6 +22,23 @@ export interface BotUpdate {
       length: number;
     }>;
   };
+  callback_query?: {
+    id: string;
+    from: {
+      id: number;
+      is_bot?: boolean;
+      first_name?: string;
+      username?: string;
+    };
+    message?: {
+      message_id: number;
+      chat: {
+        id: number;
+        type: string;
+      };
+    };
+    data?: string;
+  };
 }
 
 export interface TemplateContext {
@@ -31,7 +48,9 @@ export interface TemplateContext {
   userId: number;
   chatId: number;
   messageText?: string;
-  messageId: number;
+  messageId?: number;
+  callbackData?: string;
+  isCallback: boolean;
 }
 
 /**

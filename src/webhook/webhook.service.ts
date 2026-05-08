@@ -1,4 +1,4 @@
-import { Injectable, Logger, BadRequestException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { TemplateFactory } from '../templates/template.factory';
 import { BotService } from '../bot/bot.service';
 
@@ -40,24 +40,14 @@ export class WebhookService {
         return;
       }
 
-      // Extract message data
-      const message = update.message;
-      if (!message || !message.text) {
-        this.logger.debug('No text message to process');
+      // Build context — supports both messages and callback queries
+      const context = this.buildContext(bot.id, bot.token, bot.config, update);
+
+      if (!context) {
+        this.logger.debug('No processable content in update');
         await this.botService.markUpdateAsProcessed(bot.id, BigInt(update.update_id));
         return;
       }
-
-      // Build context for template handler
-      const context = {
-        botId: bot.id,
-        botToken: bot.token,
-        botConfig: bot.config,
-        userId: message.from?.id || message.chat.id,
-        chatId: message.chat.id,
-        messageText: message.text,
-        messageId: message.message_id,
-      };
 
       // Route to template handler
       await this.templateFactory.handleUpdate(bot.template, context);
@@ -70,6 +60,49 @@ export class WebhookService {
       this.logger.error(`Error processing update: ${error}`);
       // Intentionally swallowed — webhook must never crash the server
     }
+  }
+
+  /**
+   * Build TemplateContext from Telegram update.
+   * Supports both message and callback_query updates.
+   */
+  private buildContext(
+    botId: string,
+    botToken: string,
+    botConfig: Record<string, any>,
+    update: any,
+  ): any | null {
+    // Callback query (inline button click)
+    if (update.callback_query) {
+      const cq = update.callback_query;
+      return {
+        botId,
+        botToken,
+        botConfig,
+        userId: cq.from?.id,
+        chatId: cq.message?.chat?.id,
+        messageId: cq.message?.message_id,
+        callbackData: cq.data,
+        isCallback: true,
+      };
+    }
+
+    // Text message
+    const message = update.message;
+    if (message && message.text) {
+      return {
+        botId,
+        botToken,
+        botConfig,
+        userId: message.from?.id || message.chat.id,
+        chatId: message.chat.id,
+        messageText: message.text,
+        messageId: message.message_id,
+        isCallback: false,
+      };
+    }
+
+    return null;
   }
 
   /**
