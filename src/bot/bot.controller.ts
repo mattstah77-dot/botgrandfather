@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Body, Param, Delete, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, Delete, HttpCode, HttpStatus, Query, ParseIntPipe, DefaultValuePipe } from '@nestjs/common';
 import { BotService } from './bot.service';
 import { ConnectBotDto, UpdateBotConfigDto } from './dto/bot.dto';
 
@@ -30,5 +30,14 @@ export class BotController {
   @Get()
   async getAllBots() {
     return this.botService.getAllBots();
+  }
+
+  @Get(':id/leads')
+  async getBotLeads(
+    @Param('id') id: string,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
+  ) {
+    return this.botService.getBotLeads(id, page, limit);
   }
 }

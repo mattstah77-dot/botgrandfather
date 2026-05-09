@@ -52,6 +52,10 @@ export interface TemplateContext {
   callbackData?: string;
   callbackQueryId?: string;
   isCallback: boolean;
+  username?: string;
+  firstName?: string;
+  lastName?: string;
+  languageCode?: string;
 }
 
 /**

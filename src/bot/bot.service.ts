@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { randomBytes } from 'crypto';
 import { Bot } from './entities/bot.entity';
 import { ProcessedUpdate } from './entities/processed-update.entity';
+import { Lead } from './entities/lead.entity';
 import { ConnectBotDto, UpdateBotConfigDto } from './dto/bot.dto';
 import { TelegramService } from '../telegram/telegram.service';
 import { WEBHOOK_HOST, WEBHOOK_PATH } from '../config/env.config';
@@ -30,6 +31,8 @@ export class BotService {
     private readonly botRepository: Repository<Bot>,
     @InjectRepository(ProcessedUpdate)
     private readonly processedUpdateRepository: Repository<ProcessedUpdate>,
+    @InjectRepository(Lead)
+    private readonly leadRepository: Repository<Lead>,
     private readonly telegramService: TelegramService,
   ) {}
 
@@ -57,9 +60,13 @@ export class BotService {
 
     const entry = getTemplateEntry(dto.template)!;
 
-    // Build config: defaults → user overrides
-    const withDefaults = applyConfigDefaults(dto.config || {}, entry.configSchema);
-    validateConfigAgainstSchema(withDefaults, entry.configSchema);
+    // Merge: registry defaults → user config → schema defaults
+    const mergedConfig = {
+      ...entry.defaultConfig,
+      ...(dto.config || {}),
+    };
+    const finalConfig = applyConfigDefaults(mergedConfig, entry.configSchema);
+    validateConfigAgainstSchema(finalConfig, entry.configSchema);
 
     // Generate secure webhook secret
     const webhookSecret = this.generateWebhookSecret();
@@ -68,7 +75,7 @@ export class BotService {
     const bot = this.botRepository.create({
       token: dto.token,
       template: dto.template,
-      config: withDefaults,
+      config: finalConfig,
       webhookSecret,
     });
 
@@ -175,6 +182,55 @@ export class BotService {
     return this.botRepository.find({
       select: ['id', 'template', 'config', 'webhookSecret', 'createdAt', 'updatedAt'],
     });
+  }
+
+  /**
+   * Get leads for a specific bot with pagination.
+   * STRICTLY multi-tenant: always filters by botId.
+   */
+  async getBotLeads(botId: string, page: number = 1, limit: number = 20) {
+    const bot = await this.botRepository.findOne({ where: { id: botId } });
+
+    if (!bot) {
+      throw new NotFoundException(`Bot with ID ${botId} not found`);
+    }
+
+    const skip = (page - 1) * limit;
+
+    const [items, total] = await this.leadRepository.findAndCount({
+      where: { botId },
+      order: { createdAt: 'DESC' },
+      skip,
+      take: limit,
+    });
+
+    const pages = Math.ceil(total / limit);
+
+    return {
+      items,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages,
+      },
+    };
+  }
+
+  /**
+   * Cleanup processed updates older than specified days.
+   */
+  async cleanupProcessedUpdates(daysOld: number): Promise<number> {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - daysOld);
+
+    const result = await this.processedUpdateRepository
+      .createQueryBuilder()
+      .delete()
+      .where('createdAt < :cutoffDate', { cutoffDate })
+      .execute();
+
+    return result.affected || 0;
   }
 
   /**

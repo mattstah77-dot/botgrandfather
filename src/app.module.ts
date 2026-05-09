@@ -6,6 +6,7 @@ import { WebhookModule } from './webhook/webhook.module';
 import { TemplateModule } from './templates/template.module';
 import { TelegramModule } from './telegram/telegram.module';
 import { PlatformBotModule } from './platform-bot/platform-bot.module';
+import { AdminModule } from './admin/admin.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { Bot } from './bot/entities/bot.entity';
@@ -30,6 +31,7 @@ import { Lead } from './bot/entities/lead.entity';
     TemplateModule,
     TelegramModule,
     PlatformBotModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService],

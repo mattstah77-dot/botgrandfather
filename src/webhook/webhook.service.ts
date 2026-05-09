@@ -65,6 +65,7 @@ export class WebhookService {
   /**
    * Build TemplateContext from Telegram update.
    * Supports both message and callback_query updates.
+   * Extracts normalized user data from Telegram's nested structure.
    */
   private buildContext(
     botId: string,
@@ -75,32 +76,42 @@ export class WebhookService {
     // Callback query (inline button click)
     if (update.callback_query) {
       const cq = update.callback_query;
-      this.logger.debug(`Received callback_query: id=${cq.id}, data=${cq.data}, from=${cq.from?.id}`);
+      const from = cq.from || {};
+      this.logger.debug(`Received callback_query: id=${cq.id}, data=${cq.data}, from=${from.id}`);
       return {
         botId,
         botToken,
         botConfig,
-        userId: cq.from?.id,
+        userId: from.id,
         chatId: cq.message?.chat?.id,
         messageId: cq.message?.message_id,
         callbackData: cq.data,
         isCallback: true,
         callbackQueryId: cq.id,
+        username: from.username,
+        firstName: from.first_name,
+        lastName: from.last_name,
+        languageCode: from.language_code,
       };
     }
 
     // Text message
     const message = update.message;
     if (message && message.text) {
+      const from = message.from || {};
       return {
         botId,
         botToken,
         botConfig,
-        userId: message.from?.id || message.chat.id,
+        userId: from.id || message.chat.id,
         chatId: message.chat.id,
         messageText: message.text,
         messageId: message.message_id,
         isCallback: false,
+        username: from.username,
+        firstName: from.first_name,
+        lastName: from.last_name,
+        languageCode: from.language_code,
       };
     }
 

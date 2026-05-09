@@ -17,12 +17,8 @@ export class LeadFunnelHandler implements TemplateHandler {
 
   async handle(context: TemplateContext): Promise<void> {
     try {
-      this.logger.debug(`LeadFunnel handle: isCallback=${context.isCallback}, data=${context.callbackData}, text=${context.messageText}`);
-
       // Route callback queries (inline button clicks)
       if (context.isCallback && context.callbackData) {
-        this.logger.debug(`Handling callback: ${context.callbackData}`);
-
         // Answer callback query to remove loading spinner
         if (context.callbackQueryId) {
           await this.telegramService.answerCallbackQuery(
@@ -46,7 +42,7 @@ export class LeadFunnelHandler implements TemplateHandler {
       // Default: let service decide based on user state
       await this.service.handleDefault(context);
     } catch (error) {
-      this.logger.error(`LeadFunnel handler error: ${error}`);
+      this.logger.error(`LeadFunnel handler error: bot=${context.botId} user=${context.userId} ${error}`);
       // Intentionally swallowed — never crash the server on template errors
     }
   }

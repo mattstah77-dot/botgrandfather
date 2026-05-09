@@ -26,6 +26,18 @@ export class LeadFunnelService implements TemplateService {
   // ─── Entry Points ─────────────────────────────────────────────
 
   async handleStart(context: TemplateContext): Promise<void> {
+    const state = await this.getUserState(context);
+
+    // If user already has active funnel, warn instead of silently resetting
+    if (state.currentStep !== 'idle') {
+      await this.telegramService.sendMessage(
+        context.botToken,
+        context.chatId,
+        'You already have an active session. Continue answering questions or send /restart to start over.',
+      );
+      return;
+    }
+
     const config = context.botConfig as LeadFunnelConfig;
     const firstQuestion = config.questions[0];
 
@@ -42,6 +54,15 @@ export class LeadFunnelService implements TemplateService {
   }
 
   async handleDefault(context: TemplateContext): Promise<void> {
+    const text = context.messageText ?? '';
+
+    // Handle restart command explicitly
+    if (text === '/restart') {
+      await this.clearUserState(context);
+      await this.handleStart(context);
+      return;
+    }
+
     const state = await this.getUserState(context);
 
     if (state.currentStep === 'answering_questions') {
@@ -63,22 +84,17 @@ export class LeadFunnelService implements TemplateService {
    * Called by handler when callback_data starts with "leadfunnel:answer:"
    */
   async handleCallback(context: TemplateContext, callbackData: string): Promise<void> {
-    this.logger.debug(`handleCallback called with data: ${callbackData}`);
-
     const state = await this.getUserState(context);
-    this.logger.debug(`User state: step=${state.currentStep}, payload=${JSON.stringify(state.payload)}`);
 
     if (state.currentStep !== 'answering_questions') {
-      this.logger.debug(`Ignoring callback: user not in answering_questions state (current=${state.currentStep})`);
+      this.logger.warn(`Stale callback ignored: bot=${context.botId} user=${context.userId} step=${state.currentStep}`);
       return;
     }
 
     // Parse callback: leadfunnel:answer:<questionId>:<optionIndex>
     const parts = callbackData.split(':');
-    this.logger.debug(`Callback parts: ${JSON.stringify(parts)}`);
-
     if (parts.length !== 4 || parts[0] !== 'leadfunnel' || parts[1] !== 'answer') {
-      this.logger.warn(`Invalid callback format: ${callbackData}`);
+      this.logger.warn(`Invalid callback format ignored: bot=${context.botId} user=${context.userId}`);
       return;
     }
 
@@ -89,22 +105,19 @@ export class LeadFunnelService implements TemplateService {
     const currentIndex = state.payload?.currentQuestionIndex ?? 0;
     const currentQuestion = config.questions[currentIndex];
 
-    this.logger.debug(`Current question index: ${currentIndex}, question: ${currentQuestion?.id}`);
-
     // Security: validate question ID matches current question
     if (!currentQuestion || currentQuestion.id !== questionId) {
-      this.logger.warn(`Question mismatch: expected ${currentQuestion?.id}, got ${questionId}`);
+      this.logger.warn(`Stale callback ignored: question mismatch bot=${context.botId} user=${context.userId} expected=${currentQuestion?.id} got=${questionId}`);
       return;
     }
 
     // Security: validate option exists
     if (!currentQuestion.options || optionIndex < 0 || optionIndex >= currentQuestion.options.length) {
-      this.logger.warn(`Invalid option index: ${optionIndex} for question ${questionId}`);
+      this.logger.warn(`Invalid callback option ignored: bot=${context.botId} user=${context.userId} question=${questionId} index=${optionIndex}`);
       return;
     }
 
     const answer = currentQuestion.options[optionIndex];
-    this.logger.debug(`Valid answer selected: ${answer}`);
     await this.saveAnswerAndProceed(context, state, currentQuestion.id, answer);
   }
 
@@ -208,9 +221,8 @@ export class LeadFunnelService implements TemplateService {
 
     const config = context.botConfig as LeadFunnelConfig;
     const answers = state.payload?.answers ?? {};
-    const username = context.messageText ? undefined : undefined; // Will be set from context if available
 
-    // Create lead
+    // Create lead with user metadata from context
     await this.createLead(context, answers, contact);
 
     // Send completion message
@@ -221,7 +233,7 @@ export class LeadFunnelService implements TemplateService {
     );
 
     // Notify owner
-    await this.notifyOwner(context, answers, contact, username);
+    await this.notifyOwner(context, answers, contact);
 
     // Execute final action
     await this.executeFinalAction(context);
@@ -229,7 +241,7 @@ export class LeadFunnelService implements TemplateService {
     // Clear user state
     await this.clearUserState(context);
 
-    this.logger.log(`Funnel completed for user ${context.userId} in bot ${context.botId}`);
+    this.logger.log(`Funnel completed: bot=${context.botId} user=${context.userId}`);
   }
 
   // ─── Lead Storage ─────────────────────────────────────────────
@@ -245,11 +257,12 @@ export class LeadFunnelService implements TemplateService {
     const lead = this.leadRepository.create({
       botId: context.botId,
       userId: BigInt(context.userId),
-      username: null, // Could be enriched from Telegram API if needed
+      username: context.username || null,
       answers,
       contact,
     });
     await this.leadRepository.save(lead);
+    this.logger.log(`Lead created: bot=${context.botId} user=${context.userId}`);
   }
 
   // ─── Owner Notification ───────────────────────────────────────
@@ -261,19 +274,18 @@ export class LeadFunnelService implements TemplateService {
     context: TemplateContext,
     answers: Record<string, string>,
     contact: string,
-    username?: string,
   ): Promise<void> {
     const config = context.botConfig as LeadFunnelConfig;
     const ownerChatId = config.ownerChatId;
 
     if (!ownerChatId) {
-      this.logger.warn(`No ownerChatId configured for bot ${context.botId}`);
+      this.logger.warn(`Owner notification skipped: no ownerChatId configured for bot=${context.botId}`);
       return;
     }
 
     const chatId = parseInt(ownerChatId, 10);
     if (isNaN(chatId)) {
-      this.logger.warn(`Invalid ownerChatId: ${ownerChatId}`);
+      this.logger.warn(`Owner notification skipped: invalid ownerChatId=${ownerChatId}`);
       return;
     }
 
@@ -288,14 +300,14 @@ export class LeadFunnelService implements TemplateService {
 
     lines.push(`Contact: ${contact}`);
 
-    if (username) {
-      lines.push(`User: @${username}`);
+    if (context.username) {
+      lines.push(`User: @${context.username}`);
+    } else if (context.firstName) {
+      lines.push(`User: ${context.firstName}${context.lastName ? ' ' + context.lastName : ''}`);
     }
 
     const text = lines.join('\n');
 
-    // Use platform bot token for owner notification (or child bot token)
-    // Using child bot token — owner receives message from the business bot
     await this.telegramService.sendMessage(context.botToken, chatId, text);
   }
 

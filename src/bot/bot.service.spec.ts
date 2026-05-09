@@ -4,12 +4,14 @@ import { Repository } from 'typeorm';
 import { BotService } from './bot.service';
 import { Bot } from './entities/bot.entity';
 import { ProcessedUpdate } from './entities/processed-update.entity';
+import { Lead } from './entities/lead.entity';
 import { TelegramService } from '../telegram/telegram.service';
 
 describe('BotService', () => {
   let service: BotService;
   let botRepository: Repository<Bot>;
   let processedUpdateRepository: Repository<ProcessedUpdate>;
+  let leadRepository: Repository<Lead>;
   let telegramService: TelegramService;
 
   beforeEach(async () => {
@@ -22,6 +24,10 @@ describe('BotService', () => {
         },
         {
           provide: getRepositoryToken(ProcessedUpdate),
+          useClass: Repository,
+        },
+        {
+          provide: getRepositoryToken(Lead),
           useClass: Repository,
         },
         {
@@ -39,6 +45,7 @@ describe('BotService', () => {
     service = module.get<BotService>(BotService);
     botRepository = module.get<Repository<Bot>>(getRepositoryToken(Bot));
     processedUpdateRepository = module.get<Repository<ProcessedUpdate>>(getRepositoryToken(ProcessedUpdate));
+    leadRepository = module.get<Repository<Lead>>(getRepositoryToken(Lead));
     telegramService = module.get<TelegramService>(TelegramService);
   });
 
