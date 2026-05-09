@@ -4,6 +4,7 @@ import { TemplateFactory } from './template.factory';
 import { TelegramModule } from '../telegram/telegram.module';
 import { UserState } from '../bot/entities/user-state.entity';
 import { Lead } from '../bot/entities/lead.entity';
+import { LeadFunnelService } from './lead-funnel/lead-funnel.service';
 
 @Global()
 @Module({
@@ -11,7 +12,7 @@ import { Lead } from '../bot/entities/lead.entity';
     TelegramModule,
     TypeOrmModule.forFeature([UserState, Lead]),
   ],
-  providers: [TemplateFactory],
-  exports: [TemplateFactory],
+  providers: [TemplateFactory, LeadFunnelService],
+  exports: [TemplateFactory, LeadFunnelService],
 })
 export class TemplateModule {}

@@ -3,9 +3,10 @@ import { TemplateHandler, TemplateContext, TemplateService } from './template.in
 import { TelegramService } from '../telegram/telegram.service';
 import {
   TEMPLATE_REGISTRY,
-  getTemplateEntry,
   isValidTemplate,
 } from './common/template.registry';
+import { LeadFunnelService } from './lead-funnel/lead-funnel.service';
+import { LeadFunnelHandler } from './lead-funnel/lead-funnel.handler';
 
 /**
  * SINGLETON: One TemplateFactory holds ALL template handlers.
@@ -17,14 +18,28 @@ export class TemplateFactory {
   private readonly handlers = new Map<string, TemplateHandler>();
   private readonly services = new Map<string, TemplateService>();
 
-  constructor(private readonly telegramService: TelegramService) {
+  constructor(
+    private readonly telegramService: TelegramService,
+    private readonly leadFunnelService: LeadFunnelService,
+  ) {
     this.initializeRegistry();
   }
 
   private initializeRegistry(): void {
     for (const entry of Object.values(TEMPLATE_REGISTRY)) {
-      const service = new entry.serviceClass(this.telegramService);
-      const handler = new entry.handlerClass(service);
+      let service: TemplateService;
+      let handler: TemplateHandler;
+
+      // Special case for LeadFunnelService — already injected by NestJS
+      if (entry.name === 'lead-funnel') {
+        service = this.leadFunnelService;
+        handler = new LeadFunnelHandler(service as LeadFunnelService);
+      } else {
+        // Other templates use simple constructor
+        service = new entry.serviceClass(this.telegramService);
+        handler = new entry.handlerClass(service);
+      }
+
       this.services.set(entry.name, service);
       this.handlers.set(entry.name, handler);
     }
@@ -63,9 +78,10 @@ export class TemplateFactory {
   }
 
   /**
-   * Get list of valid template names
+   * Get list of valid templates
    */
   getValidTemplates(): readonly string[] {
     return Object.keys(TEMPLATE_REGISTRY);
   }
 }
+
