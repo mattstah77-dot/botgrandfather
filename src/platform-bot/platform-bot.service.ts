@@ -219,8 +219,8 @@ export class PlatformBotService implements OnModuleInit {
   }
 
   /**
-   * Handle bot token from user and connect the bot.
-   * Reuses existing BotService.connectBot() — NO duplication.
+   * Handle token from user and connect the bot.
+   * Reuses existing BotService.connectBot() — NO duplication of connect logic.
    */
   async handleTokenSubmission(userId: number, token: string, chatId: number): Promise<void> {
     const state = await this.getUserState(userId);
@@ -229,6 +229,92 @@ export class PlatformBotService implements OnModuleInit {
       await this.replyError(chatId, 'Please start with /start');
       return;
     }
+
+    const selectedTemplate = state.payload?.selectedTemplate;
+    if (!selectedTemplate) {
+      await this.replyError(chatId, 'Template not selected. Please start with /start');
+      await this.resetUserState(userId);
+      return;
+    }
+
+    // Validate token format
+    if (!this.isValidTokenFormat(token)) {
+      await this.replyError(
+        chatId,
+        'Invalid token format. Token should look like:\n123456789:ABCdef...',
+      );
+      return;
+    }
+
+    // Prevent user from connecting the platform bot itself as a child
+    if (token.trim() === PLATFORM_BOT_TOKEN) {
+      await this.replyError(chatId, 'You cannot connect BotGrandFather as a child bot.');
+      await this.resetUserState(userId);
+      return;
+    }
+
+    try {
+      this.logger.log(
+        `Connecting bot for user ${userId} with template ${selectedTemplate}`,
+      );
+
+      // Reuse existing BotService — NO duplication of connect logic
+      // For lead-funnel, provide minimal valid config
+      const config = selectedTemplate === 'lead-funnel'
+        ? this.getDefaultLeadFunnelConfig()
+        : {};
+
+      const result = await this.botService.connectBot({
+        token: token.trim(),
+        template: selectedTemplate,
+        config,
+      });
+
+      await this.replySuccess(chatId, result.botUsername, selectedTemplate);
+      await this.resetUserState(userId);
+
+      this.logger.log(
+        `Bot connected via BotGrandFather: user=${userId}, bot=${result.botUsername}`,
+      );
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      this.logger.error(
+        `Failed to connect bot for user ${userId}: ${msg}`,
+      );
+      await this.replyError(chatId, 'Failed to connect bot. Please check your token and try again.');
+      // Keep state so user can retry with a different token
+    }
+  }
+
+  /**
+   * Default config for lead-funnel template.
+   */
+  private getDefaultLeadFunnelConfig(): Record<string, any> {
+    return {
+      businessName: 'My Business',
+      welcomeMessage: "Welcome! Let's find the best solution for you.",
+      completionMessage: 'Thank you! We will contact you soon.',
+      ownerChatId: '', // User must set this via API or update config later
+      questions: [
+        {
+          id: 'service',
+          type: 'buttons',
+          question: 'What service are you interested in?',
+          options: ['Website Development', 'Advertising', 'SEO'],
+        },
+        {
+          id: 'budget',
+          type: 'buttons',
+          question: 'What is your budget?',
+          options: ['$500-$1000', '$1000-$5000', '$5000+'],
+        },
+      ],
+      finalAction: {
+        type: 'message',
+        text: 'Our manager will contact you soon.',
+      },
+    };
+  }
 
     const selectedTemplate = state.payload?.selectedTemplate;
     if (!selectedTemplate) {
