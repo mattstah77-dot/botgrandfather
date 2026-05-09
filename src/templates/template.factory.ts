@@ -33,7 +33,7 @@ export class TemplateFactory {
       // Special case for LeadFunnelService — already injected by NestJS
       if (entry.name === 'lead-funnel') {
         service = this.leadFunnelService;
-        handler = new LeadFunnelHandler(service as LeadFunnelService);
+        handler = new LeadFunnelHandler(service as LeadFunnelService, this.telegramService);
       } else {
         // Other templates use simple constructor
         service = new entry.serviceClass(this.telegramService);

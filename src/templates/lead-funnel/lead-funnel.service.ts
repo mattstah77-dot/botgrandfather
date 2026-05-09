@@ -63,15 +63,20 @@ export class LeadFunnelService implements TemplateService {
    * Called by handler when callback_data starts with "leadfunnel:answer:"
    */
   async handleCallback(context: TemplateContext, callbackData: string): Promise<void> {
+    this.logger.debug(`handleCallback called with data: ${callbackData}`);
+
     const state = await this.getUserState(context);
+    this.logger.debug(`User state: step=${state.currentStep}, payload=${JSON.stringify(state.payload)}`);
 
     if (state.currentStep !== 'answering_questions') {
-      // Ignore callbacks outside of question flow
+      this.logger.debug(`Ignoring callback: user not in answering_questions state (current=${state.currentStep})`);
       return;
     }
 
     // Parse callback: leadfunnel:answer:<questionId>:<optionIndex>
     const parts = callbackData.split(':');
+    this.logger.debug(`Callback parts: ${JSON.stringify(parts)}`);
+
     if (parts.length !== 4 || parts[0] !== 'leadfunnel' || parts[1] !== 'answer') {
       this.logger.warn(`Invalid callback format: ${callbackData}`);
       return;
@@ -83,6 +88,8 @@ export class LeadFunnelService implements TemplateService {
     const config = context.botConfig as LeadFunnelConfig;
     const currentIndex = state.payload?.currentQuestionIndex ?? 0;
     const currentQuestion = config.questions[currentIndex];
+
+    this.logger.debug(`Current question index: ${currentIndex}, question: ${currentQuestion?.id}`);
 
     // Security: validate question ID matches current question
     if (!currentQuestion || currentQuestion.id !== questionId) {
@@ -97,6 +104,7 @@ export class LeadFunnelService implements TemplateService {
     }
 
     const answer = currentQuestion.options[optionIndex];
+    this.logger.debug(`Valid answer selected: ${answer}`);
     await this.saveAnswerAndProceed(context, state, currentQuestion.id, answer);
   }
 

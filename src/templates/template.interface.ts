@@ -50,6 +50,7 @@ export interface TemplateContext {
   messageText?: string;
   messageId?: number;
   callbackData?: string;
+  callbackQueryId?: string;
   isCallback: boolean;
 }
 

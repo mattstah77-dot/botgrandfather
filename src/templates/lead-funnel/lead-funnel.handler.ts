@@ -1,6 +1,7 @@
 import { Logger } from '@nestjs/common';
 import { TemplateContext, TemplateHandler } from '../template.interface';
 import { LeadFunnelService } from './lead-funnel.service';
+import { TelegramService } from '../../telegram/telegram.service';
 
 /**
  * Lead Funnel Handler — THIN. Only routes updates to service methods.
@@ -9,13 +10,27 @@ import { LeadFunnelService } from './lead-funnel.service';
 export class LeadFunnelHandler implements TemplateHandler {
   private readonly logger = new Logger(LeadFunnelHandler.name);
 
-  constructor(private readonly service: LeadFunnelService) {}
+  constructor(
+    private readonly service: LeadFunnelService,
+    private readonly telegramService: TelegramService,
+  ) {}
 
   async handle(context: TemplateContext): Promise<void> {
     try {
+      this.logger.debug(`LeadFunnel handle: isCallback=${context.isCallback}, data=${context.callbackData}, text=${context.messageText}`);
+
       // Route callback queries (inline button clicks)
       if (context.isCallback && context.callbackData) {
         this.logger.debug(`Handling callback: ${context.callbackData}`);
+
+        // Answer callback query to remove loading spinner
+        if (context.callbackQueryId) {
+          await this.telegramService.answerCallbackQuery(
+            context.botToken,
+            context.callbackQueryId,
+          );
+        }
+
         await this.service.handleCallback(context, context.callbackData);
         return;
       }
@@ -36,3 +51,4 @@ export class LeadFunnelHandler implements TemplateHandler {
     }
   }
 }
+

@@ -75,6 +75,7 @@ export class WebhookService {
     // Callback query (inline button click)
     if (update.callback_query) {
       const cq = update.callback_query;
+      this.logger.debug(`Received callback_query: id=${cq.id}, data=${cq.data}, from=${cq.from?.id}`);
       return {
         botId,
         botToken,
@@ -84,6 +85,7 @@ export class WebhookService {
         messageId: cq.message?.message_id,
         callbackData: cq.data,
         isCallback: true,
+        callbackQueryId: cq.id,
       };
     }
 
