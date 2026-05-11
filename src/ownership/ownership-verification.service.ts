@@ -1,5 +1,7 @@
 import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
-import { BotService } from '../bot/bot.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Bot } from '../bot/entities/bot.entity';
 
 /**
  * Lightweight ownership verification service.
@@ -8,11 +10,16 @@ import { BotService } from '../bot/bot.service';
  * This is a FOUNDATION for future auth — not a full auth system.
  * Used internally to enforce tenant boundaries before adding full auth layer.
  *
+ * NOTE: Uses TypeOrm directly to avoid circular dependency with BotModule.
+ *
  * TODO: Replace with proper auth guards + Telegram initData verification.
  */
 @Injectable()
 export class OwnershipVerificationService {
-  constructor(private readonly botService: BotService) {}
+  constructor(
+    @InjectRepository(Bot)
+    private readonly botRepository: Repository<Bot>,
+  ) {}
 
   /**
    * Verify that a bot belongs to an owner.
@@ -29,7 +36,7 @@ export class OwnershipVerificationService {
   async assertBotOwnership(botId: string, ownerToken: string): Promise<void> {
     // TODO: Implement proper auth verification
     // For now, we just verify the bot exists
-    const bot = await this.botService.getBotById(botId);
+    const bot = await this.botRepository.findOne({ where: { id: botId } });
     
     if (!bot) {
       throw new NotFoundException(`Bot with ID ${botId} not found`);
@@ -46,7 +53,10 @@ export class OwnershipVerificationService {
    */
   async getBotForInternalUse(botId: string, ownerToken: string): Promise<any> {
     // TODO: Implement proper auth verification
-    const bot = await this.botService.getBotByIdWithToken(botId);
+    const bot = await this.botRepository.findOne({
+      where: { id: botId },
+      select: ['id', 'token', 'template', 'config', 'webhookSecret', 'createdAt', 'updatedAt'],
+    });
     
     if (!bot) {
       throw new NotFoundException(`Bot with ID ${botId} not found`);
