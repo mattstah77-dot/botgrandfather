@@ -187,6 +187,56 @@ export class BotService {
   }
 
   /**
+   * Get all bots owned by a specific owner.
+   */
+  async getOwnerBots(ownerId: string) {
+    return this.botRepository.find({
+      where: { ownerId },
+      select: ['id', 'template', 'config', 'webhookSecret', 'createdAt', 'updatedAt'],
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  /**
+   * Get lightweight overview for a bot.
+   * Returns basic bot info + counts (customers, leads, events).
+   */
+  async getBotOverview(botId: string): Promise<{
+    id: string;
+    template: string;
+    createdAt: Date;
+    updatedAt: Date;
+    customerCount: number;
+    leadCount: number;
+    eventCount: number;
+  }> {
+    const bot = await this.botRepository.findOne({
+      where: { id: botId },
+      select: ['id', 'template', 'createdAt', 'updatedAt'],
+    });
+
+    if (!bot) {
+      throw new NotFoundException(`Bot with ID ${botId} not found`);
+    }
+
+    // Count leads
+    const leadCount = await this.leadRepository.count({ where: { botId } });
+
+    // Count processed updates (proxy for total interactions)
+    const eventCount = await this.processedUpdateRepository.count({ where: { botId } });
+
+    return {
+      id: bot.id,
+      template: bot.template,
+      createdAt: bot.createdAt,
+      updatedAt: bot.updatedAt,
+      customerCount: 0, // Will be populated by controller using CustomerService
+      leadCount,
+      eventCount,
+    };
+  }
+
+  /**
    * Get leads for a specific bot with pagination.
    * STRICTLY multi-tenant: always filters by botId.
    */

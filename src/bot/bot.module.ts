@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { BotController } from './bot.controller';
 import { BotService } from './bot.service';
 import { TelegramModule } from '../telegram/telegram.module';
+import { CustomerModule } from '../customer/customer.module';
 import { Bot } from './entities/bot.entity';
 import { UserState } from './entities/user-state.entity';
 import { ProcessedUpdate } from './entities/processed-update.entity';
@@ -11,6 +12,7 @@ import { Lead } from './entities/lead.entity';
 @Module({
   imports: [
     TelegramModule,
+    CustomerModule,
     TypeOrmModule.forFeature([Bot, UserState, ProcessedUpdate, Lead]),
   ],
   controllers: [BotController],

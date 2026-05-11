@@ -2,6 +2,8 @@ import { Module, Global } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { TemplateFactory } from './template.factory';
 import { TelegramModule } from '../telegram/telegram.module';
+import { CustomerModule } from '../customer/customer.module';
+import { AnalyticsModule } from '../analytics/analytics.module';
 import { UserState } from '../bot/entities/user-state.entity';
 import { Lead } from '../bot/entities/lead.entity';
 import { LeadFunnelService } from './lead-funnel/lead-funnel.service';
@@ -13,6 +15,8 @@ import { Template3Service } from './template3/template3.service';
 @Module({
   imports: [
     TelegramModule,
+    CustomerModule,
+    AnalyticsModule,
     TypeOrmModule.forFeature([UserState, Lead]),
   ],
   providers: [

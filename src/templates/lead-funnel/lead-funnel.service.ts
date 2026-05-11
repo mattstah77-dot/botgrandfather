@@ -5,6 +5,8 @@ import { TelegramService } from '../../telegram/telegram.service';
 import { TemplateContext, TemplateService } from '../template.interface';
 import { UserState } from '../../bot/entities/user-state.entity';
 import { Lead } from '../../bot/entities/lead.entity';
+import { CustomerService } from '../../customer/customer.service';
+import { AnalyticsService } from '../../analytics/analytics.service';
 import { FunnelQuestion, FunnelFinalAction, LeadFunnelConfig } from './lead-funnel.types';
 
 /**
@@ -17,6 +19,8 @@ export class LeadFunnelService implements TemplateService {
 
   constructor(
     private readonly telegramService: TelegramService,
+    private readonly customerService: CustomerService,
+    private readonly analyticsService: AnalyticsService,
     @InjectRepository(UserState)
     private readonly userStateRepository: Repository<UserState>,
     @InjectRepository(Lead)
@@ -26,6 +30,19 @@ export class LeadFunnelService implements TemplateService {
   // ─── Entry Points ─────────────────────────────────────────────
 
   async handleStart(context: TemplateContext): Promise<void> {
+    // Ensure universal customer exists for this user
+    await this.customerService.ensureCustomer(context.botId, context.userId, {
+      username: context.username,
+      firstName: context.firstName,
+      lastName: context.lastName,
+    });
+
+    // Track funnel start analytics
+    await this.analyticsService.trackEvent(context.botId, 'funnel:started', {
+      template: 'lead-funnel',
+      userId: context.userId,
+    });
+
     const state = await this.getUserState(context);
 
     // If user already has active funnel, warn instead of silently resetting
@@ -224,6 +241,21 @@ export class LeadFunnelService implements TemplateService {
 
     // Create lead with user metadata from context
     await this.createLead(context, answers, contact);
+
+    // Update universal customer status to converted
+    await this.customerService.updateStatus(context.botId, context.userId, 'converted');
+
+    // Track funnel completion analytics
+    await this.analyticsService.trackEvent(context.botId, 'funnel:completed', {
+      template: 'lead-funnel',
+      userId: context.userId,
+    });
+
+    // Track lead creation analytics
+    await this.analyticsService.trackEvent(context.botId, 'lead:created', {
+      template: 'lead-funnel',
+      userId: context.userId,
+    });
 
     // Send completion message
     await this.telegramService.sendMessage(

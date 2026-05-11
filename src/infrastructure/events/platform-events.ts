@@ -14,6 +14,8 @@ export type PlatformEventType =
   | 'funnel:completed'
   | 'funnel:abandoned'
   | 'owner:created'
+  | 'customer:created'
+  | 'customer:converted'
   | 'subscription:activated'
   | 'subscription:cancelled';
 

@@ -12,6 +12,9 @@ import { AnalyticsModule } from './analytics/analytics.module';
 import { BillingModule } from './billing/billing.module';
 import { MiniappModule } from './miniapp/miniapp.module';
 import { RuntimeModule } from './runtime/runtime.module';
+import { OwnerModulesModule } from './owner-modules/owner-modules.module';
+import { CustomerModule } from './customer/customer.module';
+import { Customer } from './customer/entities/customer.entity';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { Bot } from './bot/entities/bot.entity';
@@ -30,10 +33,11 @@ import { AnalyticsEvent } from './analytics/entities/analytics-event.entity';
     TypeOrmModule.forRoot({
       type: 'postgres',
       url: process.env.DATABASE_URL,
-      entities: [Bot, UserState, ProcessedUpdate, Lead, Owner, AnalyticsEvent],
+      entities: [Bot, UserState, ProcessedUpdate, Lead, Owner, AnalyticsEvent, Customer],
       synchronize: process.env.TYPEORM_SYNC !== 'false',
     }),
     RuntimeModule,
+    OwnerModulesModule,
     BotModule,
     WebhookModule,
     TemplateModule,
@@ -44,6 +48,7 @@ import { AnalyticsEvent } from './analytics/entities/analytics-event.entity';
     AnalyticsModule,
     BillingModule,
     MiniappModule,
+    CustomerModule,
   ],
   controllers: [AppController],
   providers: [AppService],
