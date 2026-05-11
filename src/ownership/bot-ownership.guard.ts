@@ -37,7 +37,8 @@ export class BotOwnershipGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest<Request>() as MiniAppRequest;
+    const req = context.switchToHttp().getRequest<Request>();
+    const request = req as MiniAppRequest;
     const session = request.miniAppSession;
 
     if (!session) {
@@ -46,7 +47,7 @@ export class BotOwnershipGuard implements CanActivate {
     }
 
     // Extract botId from route params
-    const botId = request.params?.id || request.params?.botId;
+    const botId = req.params.id || req.params.botId;
 
     if (!botId || typeof botId !== 'string') {
       this.logger.warn('Ownership check failed: no botId in route params');
