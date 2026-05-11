@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Bot } from '../bot/entities/bot.entity';
 import { UserState } from '../bot/entities/user-state.entity';
 import { BotService } from '../bot/bot.service';
+import { OwnerService } from '../owner/owner.service';
 import { TelegramService } from '../telegram/telegram.service';
 import { PLATFORM_BOT_TOKEN, WEBHOOK_HOST, PLATFORM_BOT_WEBHOOK_PATH } from '../config/env.config';
 import { VALID_TEMPLATE_NAMES } from '../templates/common/template.registry';
@@ -23,6 +24,7 @@ export class PlatformBotService implements OnModuleInit {
     @InjectRepository(UserState)
     private readonly userStateRepository: Repository<UserState>,
     private readonly botService: BotService,
+    private readonly ownerService: OwnerService,
     private readonly telegramService: TelegramService,
   ) {}
 
@@ -222,7 +224,7 @@ export class PlatformBotService implements OnModuleInit {
    * Handle token from user and connect the bot.
    * Reuses existing BotService.connectBot() — NO duplication of connect logic.
    */
-  async handleTokenSubmission(userId: number, token: string, chatId: number): Promise<void> {
+  async handleTokenSubmission(userId: number, token: string, chatId: number, ownerId?: string): Promise<void> {
     const state = await this.getUserState(userId);
 
     if (state.currentStep !== 'waiting_bot_token') {
@@ -258,7 +260,6 @@ export class PlatformBotService implements OnModuleInit {
         `Connecting bot for user ${userId} with template ${selectedTemplate}`,
       );
 
-      // Reuse existing BotService — NO duplication of connect logic
       // For lead-funnel, provide minimal valid config
       const config = selectedTemplate === 'lead-funnel'
         ? this.getDefaultLeadFunnelConfig()
@@ -268,13 +269,13 @@ export class PlatformBotService implements OnModuleInit {
         token: token.trim(),
         template: selectedTemplate,
         config,
-      });
+      }, ownerId);
 
       await this.replySuccess(chatId, result.botUsername, selectedTemplate);
       await this.resetUserState(userId);
 
       this.logger.log(
-        `Bot connected via BotGrandFather: user=${userId}, bot=${result.botUsername}`,
+        `Bot connected via BotGrandFather: user=${userId}, bot=${result.botUsername}, owner=${ownerId || 'none'}`,
       );
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);

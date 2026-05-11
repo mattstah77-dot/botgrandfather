@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PlatformBotService } from './platform-bot.service';
+import { OwnerService } from '../owner/owner.service';
 import { TelegramService } from '../telegram/telegram.service';
 import { PLATFORM_BOT_TOKEN } from '../config/env.config';
 
@@ -9,6 +10,8 @@ import { PLATFORM_BOT_TOKEN } from '../config/env.config';
  * - /start command
  * - Inline keyboard callbacks (template selection)
  * - Text messages (bot token submission)
+ *
+ * Also ensures Owner records are created/updated for every interaction.
  */
 @Injectable()
 export class PlatformBotHandler {
@@ -16,6 +19,7 @@ export class PlatformBotHandler {
 
   constructor(
     private readonly platformBotService: PlatformBotService,
+    private readonly ownerService: OwnerService,
     private readonly telegramService: TelegramService,
   ) {}
 
@@ -53,13 +57,21 @@ export class PlatformBotHandler {
    */
   private async handleMessage(message: any): Promise<void> {
     const text = message.text as string;
-    const userId = message.from?.id as number;
+    const from = message.from || {};
+    const userId = from.id as number;
     const chatId = message.chat?.id as number;
 
     if (!userId || !chatId) {
       this.logger.warn('Message missing userId or chatId');
       return;
     }
+
+    // Ensure owner exists for every interaction
+    const owner = await this.ownerService.findOrCreateOwner(userId, {
+      username: from.username,
+      firstName: from.first_name,
+      lastName: from.last_name,
+    });
 
     // /start command
     if (text === '/start') {
@@ -73,7 +85,7 @@ export class PlatformBotHandler {
 
     if (state.currentStep === 'waiting_bot_token') {
       // User sent a token
-      await this.platformBotService.handleTokenSubmission(userId, text, chatId);
+      await this.platformBotService.handleTokenSubmission(userId, text, chatId, owner.id);
       return;
     }
 
@@ -86,13 +98,21 @@ export class PlatformBotHandler {
    */
   private async handleCallbackQuery(callbackQuery: any): Promise<void> {
     const data = callbackQuery.data as string;
-    const userId = callbackQuery.from?.id as number;
+    const from = callbackQuery.from || {};
+    const userId = from.id as number;
     const chatId = callbackQuery.message?.chat?.id as number;
 
     if (!userId || !chatId || !data) {
       this.logger.warn('Callback query missing required fields');
       return;
     }
+
+    // Ensure owner exists for every interaction
+    await this.ownerService.findOrCreateOwner(userId, {
+      username: from.username,
+      firstName: from.first_name,
+      lastName: from.last_name,
+    });
 
     // Template selection: "template:template1"
     if (data.startsWith('template:')) {

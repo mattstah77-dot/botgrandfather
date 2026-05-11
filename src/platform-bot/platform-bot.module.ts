@@ -4,6 +4,7 @@ import { PlatformBotController } from './platform-bot.controller';
 import { PlatformBotService } from './platform-bot.service';
 import { PlatformBotHandler } from './platform-bot.handler';
 import { BotModule } from '../bot/bot.module';
+import { OwnerModule } from '../owner/owner.module';
 import { TelegramModule } from '../telegram/telegram.module';
 import { Bot } from '../bot/entities/bot.entity';
 import { UserState } from '../bot/entities/user-state.entity';
@@ -17,6 +18,7 @@ import { UserState } from '../bot/entities/user-state.entity';
   imports: [
     TypeOrmModule.forFeature([Bot, UserState]),
     BotModule,
+    OwnerModule,
     TelegramModule,
   ],
   controllers: [PlatformBotController],

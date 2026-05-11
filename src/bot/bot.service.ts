@@ -46,8 +46,9 @@ export class BotService {
   /**
    * Connect a new bot.
    * Flow: validate token → create record → generate secret → set webhook.
+   * Optionally assigns owner.
    */
-  async connectBot(dto: ConnectBotDto) {
+  async connectBot(dto: ConnectBotDto, ownerId?: string) {
     // Validate token with Telegram (never log the raw token)
     const botInfo = await this.telegramService.validateToken(dto.token);
 
@@ -77,6 +78,7 @@ export class BotService {
       template: dto.template,
       config: finalConfig,
       webhookSecret,
+      ownerId: ownerId || null,
     });
 
     await this.botRepository.save(bot);
