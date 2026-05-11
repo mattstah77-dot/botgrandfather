@@ -10,12 +10,11 @@ import { TelegramInitDataService } from './telegram-init-data.service';
 import { MiniAppSession } from './miniapp-session.interface';
 
 /**
- * Extend Express Request to include MiniAppSession.
+ * Extended Express Request type with MiniAppSession.
+ * Alternative to module augmentation for better compatibility.
  */
-declare module 'express' {
-  interface Request {
-    miniAppSession?: MiniAppSession;
-  }
+export interface MiniAppRequest extends Request {
+  miniAppSession?: MiniAppSession;
 }
 
 /**
@@ -28,7 +27,7 @@ declare module 'express' {
  * Usage:
  * @UseGuards(MiniAppAuthGuard)
  * @Get('dashboard')
- * async getDashboard(@Req() req: Request) {
+ * async getDashboard(@Req() req: MiniAppRequest) {
  *   const session = req.miniAppSession;
  *   // ...
  * }
@@ -66,7 +65,7 @@ export class MiniAppAuthGuard implements CanActivate {
 
     try {
       const session = await this.initDataService.validateAndCreateSession(initData);
-      request.miniAppSession = session;
+      (request as MiniAppRequest).miniAppSession = session;
       return true;
     } catch (error) {
       if (error instanceof UnauthorizedException) {
