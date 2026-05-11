@@ -10,6 +10,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Bot } from '../bot/entities/bot.entity';
 import type { MiniAppRequest } from '../miniapp/auth/miniapp-auth.guard';
+import type { Request } from 'express';
 
 /**
  * BotOwnershipGuard — verifies the requesting owner owns the bot resource.
@@ -36,7 +37,7 @@ export class BotOwnershipGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest<MiniAppRequest>();
+    const request = context.switchToHttp().getRequest<Request>() as MiniAppRequest;
     const session = request.miniAppSession;
 
     if (!session) {
@@ -45,8 +46,7 @@ export class BotOwnershipGuard implements CanActivate {
     }
 
     // Extract botId from route params
-    const params = request.params;
-    const botId = params.id || params.botId;
+    const botId = request.params?.id || request.params?.botId;
 
     if (!botId || typeof botId !== 'string') {
       this.logger.warn('Ownership check failed: no botId in route params');
