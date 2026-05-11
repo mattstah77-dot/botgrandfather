@@ -1,0 +1,79 @@
+import {
+  CanActivate,
+  ExecutionContext,
+  Injectable,
+  Logger,
+  UnauthorizedException,
+} from '@nestjs/common';
+import type { Request } from 'express';
+import { TelegramInitDataService } from './telegram-init-data.service';
+import { MiniAppSession } from './miniapp-session.interface';
+
+/**
+ * Extend Express Request to include MiniAppSession.
+ */
+declare module 'express' {
+  interface Request {
+    miniAppSession?: MiniAppSession;
+  }
+}
+
+/**
+ * MiniAppAuthGuard — validates Telegram Mini App initData on incoming requests.
+ *
+ * ARCHITECTURAL PRINCIPLE:
+ * This guard is reusable across ALL Mini App controllers.
+ * It validates initData and attaches the session to the request.
+ *
+ * Usage:
+ * @UseGuards(MiniAppAuthGuard)
+ * @Get('dashboard')
+ * async getDashboard(@Req() req: Request) {
+ *   const session = req.miniAppSession;
+ *   // ...
+ * }
+ *
+ * CURRENT STATE:
+ * - Validates initData cryptographically
+ * - Creates/finds Owner automatically
+ * - Attaches session to request
+ *
+ * FUTURE:
+ * - Add session caching (Redis/memory)
+ * - Add session expiry
+ * - Add refresh mechanism
+ */
+@Injectable()
+export class MiniAppAuthGuard implements CanActivate {
+  private readonly logger = new Logger(MiniAppAuthGuard.name);
+
+  constructor(private readonly initDataService: TelegramInitDataService) {}
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const request = context.switchToHttp().getRequest<Request>();
+
+    // Extract initData from header or query
+    // Telegram sends initData in the X-Telegram-Init-Data header
+    // or as query parameter
+    const initData =
+      (request.headers['x-telegram-init-data'] as string) ||
+      (request.query.initData as string);
+
+    if (!initData || typeof initData !== 'string') {
+      this.logger.warn('Missing initData in request');
+      throw new UnauthorizedException('Missing authentication');
+    }
+
+    try {
+      const session = await this.initDataService.validateAndCreateSession(initData);
+      request.miniAppSession = session;
+      return true;
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      this.logger.error(`Auth validation error: ${error}`);
+      throw new UnauthorizedException('Authentication failed');
+    }
+  }
+}

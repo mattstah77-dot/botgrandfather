@@ -1,20 +1,48 @@
 import { Module } from '@nestjs/common';
+import { MiniappController } from './controllers/miniapp.controller';
+import { OwnerDashboardController } from './controllers/owner-dashboard.controller';
+import { TelegramInitDataService } from './auth/telegram-init-data.service';
+import { MiniAppAuthGuard } from './auth/miniapp-auth.guard';
+import { DashboardService } from './services/dashboard.service';
+import { NavigationService } from './services/navigation.service';
+import { OwnerViewService } from './services/owner-view.service';
+import { OwnerModule } from '../owner/owner.module';
+import { BotModule } from '../bot/bot.module';
+import { CustomerModule } from '../customer/customer.module';
+import { AnalyticsModule } from '../analytics/analytics.module';
 
 /**
- * Mini App Module — placeholder for future Telegram WebApp dashboard.
+ * Mini App Module — operational control center for BotGrandFather platform.
  *
- * Future capabilities:
- * - Owner dashboard (lead management, bot settings)
- * - Funnel editing (config-driven, no visual builder yet)
- * - Analytics overview
- * - Billing/subscription management
+ * PURPOSE:
+ * - Owner dashboard (universal, template-agnostic)
+ * - Dynamic navigation (driven by OwnerModuleRegistry)
+ * - CRM, analytics, management
  *
- * Auth strategy: Telegram WebApp initData verification
- * https://core.telegram.org/bots/webapps#validating-data-received-via-the-web-app
+ * AUTH:
+ * - Telegram WebApp initData validation
+ * - No JWT, no sessions, no refresh tokens (yet)
+ *
+ * ARCHITECTURE:
+ * - Controllers: API endpoints (owner-level + bot-level)
+ * - Services: Data aggregation, view composition, navigation
+ * - Auth: Telegram initData validation + guard
+ *
+ * NOT:
+ * - Runtime engine
+ * - Template-specific hardcoded UI
+ * - Monolithic dashboard
  */
 @Module({
-  controllers: [],
-  providers: [],
-  exports: [],
+  imports: [OwnerModule, BotModule, CustomerModule, AnalyticsModule],
+  controllers: [MiniappController, OwnerDashboardController],
+  providers: [
+    TelegramInitDataService,
+    MiniAppAuthGuard,
+    DashboardService,
+    NavigationService,
+    OwnerViewService,
+  ],
+  exports: [TelegramInitDataService, MiniAppAuthGuard],
 })
 export class MiniappModule {}
