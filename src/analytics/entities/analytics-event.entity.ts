@@ -21,7 +21,7 @@ export class AnalyticsEvent {
   @Index()
   botId: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   ownerId: string | null;
 
   @Column()
