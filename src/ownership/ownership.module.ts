@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { OwnershipVerificationService } from './ownership-verification.service';
 import { BotOwnershipGuard } from './bot-ownership.guard';
 import { Bot } from '../bot/entities/bot.entity';
+import { BotModule } from '../bot/bot.module';
 
 /**
  * Ownership Module
@@ -14,7 +15,7 @@ import { Bot } from '../bot/entities/bot.entity';
  * Import this module where you need ownership verification.
  */
 @Module({
-  imports: [TypeOrmModule.forFeature([Bot])],
+  imports: [BotModule, TypeOrmModule.forFeature([Bot])],
   providers: [OwnershipVerificationService, BotOwnershipGuard],
   exports: [OwnershipVerificationService, BotOwnershipGuard],
 })
