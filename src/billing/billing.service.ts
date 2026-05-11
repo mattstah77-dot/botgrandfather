@@ -43,6 +43,24 @@ export class BillingService {
   }
 
   /**
+   * Check if owner is within interaction quota.
+   */
+  canAddInteraction(plan: string, currentInteractionCount: number): boolean {
+    const limits = this.getPlanLimits(plan);
+    if (!limits) return false;
+    return currentInteractionCount < limits.maxInteractionsPerMonth;
+  }
+
+  /**
+   * Check if owner is within flow quota.
+   */
+  canAddFlow(plan: string, currentFlowCount: number): boolean {
+    const limits = this.getPlanLimits(plan);
+    if (!limits) return false;
+    return currentFlowCount < limits.maxFlows;
+  }
+
+  /**
    * Check if analytics feature is available on the plan.
    */
   hasAnalytics(plan: string): boolean {

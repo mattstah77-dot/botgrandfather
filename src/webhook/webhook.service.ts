@@ -18,15 +18,17 @@ export class WebhookService {
   /**
    * Process incoming webhook update.
    * Credentials verified via botId + webhookSecret (token never appears in URL).
+   *
+   * @returns { skipped: boolean } — whether the update was a duplicate
    */
-  async processUpdate(botId: string, secret: string, update: any): Promise<void> {
+  async processUpdate(botId: string, secret: string, update: any): Promise<{ skipped: boolean }> {
     try {
       // Verify credentials: bot must exist and secret must match
       const bot = await this.botService.verifyWebhook(botId, secret);
 
       if (!bot) {
         this.logger.warn(`Invalid webhook credentials for botId=${botId}`);
-        return;
+        throw new BadRequestException('Invalid webhook credentials');
       }
 
       // Idempotency: each (botId, updateId) pair is processed once
@@ -37,7 +39,7 @@ export class WebhookService {
 
       if (isAlreadyProcessed) {
         this.logger.debug(`Update ${update.update_id} already processed for bot ${bot.id}`);
-        return;
+        return { skipped: true };
       }
 
       // Build context — supports both messages and callback queries
@@ -46,7 +48,7 @@ export class WebhookService {
       if (!context) {
         this.logger.debug('No processable content in update');
         await this.botService.markUpdateAsProcessed(bot.id, BigInt(update.update_id));
-        return;
+        return { skipped: false };
       }
 
       // Route to template handler
@@ -56,9 +58,10 @@ export class WebhookService {
       await this.botService.markUpdateAsProcessed(bot.id, BigInt(update.update_id));
 
       this.logger.debug(`Successfully processed update ${update.update_id} for bot ${bot.id}`);
+      return { skipped: false };
     } catch (error) {
       this.logger.error(`Error processing update: ${error}`);
-      // Intentionally swallowed — webhook must never crash the server
+      throw error; // Let controller decide response
     }
   }
 

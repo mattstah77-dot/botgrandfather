@@ -1,10 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, QueryFailedError, DataSource } from 'typeorm';
 import { TelegramService } from '../../telegram/telegram.service';
 import { TemplateContext, TemplateService } from '../template.interface';
 import { UserState } from '../../bot/entities/user-state.entity';
 import { Lead } from '../../bot/entities/lead.entity';
+import { Customer } from '../../customer/entities/customer.entity';
 import { CustomerService } from '../../customer/customer.service';
 import { AnalyticsService } from '../../analytics/analytics.service';
 import { FunnelQuestion, FunnelFinalAction, LeadFunnelConfig } from './lead-funnel.types';
@@ -21,6 +22,7 @@ export class LeadFunnelService implements TemplateService {
     private readonly telegramService: TelegramService,
     private readonly customerService: CustomerService,
     private readonly analyticsService: AnalyticsService,
+    private readonly dataSource: DataSource,
     @InjectRepository(UserState)
     private readonly userStateRepository: Repository<UserState>,
     @InjectRepository(Lead)
@@ -37,10 +39,11 @@ export class LeadFunnelService implements TemplateService {
       lastName: context.lastName,
     });
 
-    // Track funnel start analytics
-    await this.analyticsService.trackEvent(context.botId, 'funnel:started', {
+    // Track session start analytics (template-agnostic)
+    await this.analyticsService.trackEvent(context.botId, 'session:started', {
       template: 'lead-funnel',
       userId: context.userId,
+      flowType: 'funnel',
     });
 
     const state = await this.getUserState(context);
@@ -224,6 +227,10 @@ export class LeadFunnelService implements TemplateService {
 
   /**
    * Handle contact submission and complete funnel.
+   *
+   * TRANSACTION SAFETY:
+   * Lead creation, customer status update, and analytics are wrapped
+   * in a transaction to prevent inconsistent state on failure.
    */
   private async handleContact(context: TemplateContext, state: UserState): Promise<void> {
     const contact = (context.messageText ?? '').trim();
@@ -239,22 +246,49 @@ export class LeadFunnelService implements TemplateService {
     const config = context.botConfig as LeadFunnelConfig;
     const answers = state.payload?.answers ?? {};
 
-    // Create lead with user metadata from context
-    await this.createLead(context, answers, contact);
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-    // Update universal customer status to converted
-    await this.customerService.updateStatus(context.botId, context.userId, 'converted');
+    try {
+      // Create lead within transaction
+      const lead = this.leadRepository.create({
+        botId: context.botId,
+        userId: BigInt(context.userId),
+        username: context.username || null,
+        answers,
+        contact,
+      });
+      await queryRunner.manager.save(lead);
 
-    // Track funnel completion analytics
-    await this.analyticsService.trackEvent(context.botId, 'funnel:completed', {
+      // Update universal customer status within transaction
+      await queryRunner.manager.update(
+        Customer,
+        { botId: context.botId, telegramUserId: BigInt(context.userId) },
+        { status: 'converted' },
+      );
+
+      await queryRunner.commitTransaction();
+      this.logger.log(`Lead created: bot=${context.botId} user=${context.userId}`);
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      this.logger.error(`Funnel completion failed: bot=${context.botId} user=${context.userId} error=${(error as Error).message}`);
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
+
+    // Track analytics (non-critical, outside transaction)
+    await this.analyticsService.trackEvent(context.botId, 'session:completed', {
       template: 'lead-funnel',
       userId: context.userId,
+      flowType: 'funnel',
     });
 
-    // Track lead creation analytics
-    await this.analyticsService.trackEvent(context.botId, 'lead:created', {
+    await this.analyticsService.trackEvent(context.botId, 'conversion:achieved', {
       template: 'lead-funnel',
       userId: context.userId,
+      conversionType: 'lead',
     });
 
     // Send completion message
@@ -394,7 +428,37 @@ export class LeadFunnelService implements TemplateService {
         currentStep: 'idle',
         payload: {},
       });
-      await this.userStateRepository.save(state);
+
+      try {
+        await this.userStateRepository.save(state);
+      } catch (error) {
+        // Unique constraint violation — another webhook created the state first
+        if (error instanceof QueryFailedError) {
+          const driverError = error.driverError;
+          const isUniqueViolation =
+            driverError?.code === '23505' ||
+            (driverError?.message && driverError.message.includes('unique'));
+
+          if (isUniqueViolation) {
+            this.logger.debug(
+              `UserState race resolved: bot=${context.botId} user=${context.userId}`,
+            );
+            state = await this.userStateRepository.findOne({
+              where: { botId: context.botId, userId: BigInt(context.userId) },
+            });
+            if (!state) {
+              this.logger.error(
+                `Unexpected: UserState not found after unique violation: bot=${context.botId} user=${context.userId}`,
+              );
+              throw error;
+            }
+          } else {
+            throw error;
+          }
+        } else {
+          throw error;
+        }
+      }
     }
 
     return state;

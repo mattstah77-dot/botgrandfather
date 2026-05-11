@@ -10,6 +10,13 @@ export type PlatformEventType =
   | 'bot:deleted'
   | 'bot:config_updated'
   | 'lead:created'
+  // Generic session events (template-agnostic)
+  | 'session:started'
+  | 'session:completed'
+  | 'session:abandoned'
+  // Conversion events (template-agnostic)
+  | 'conversion:achieved'
+  // Legacy funnel events (backward compatibility)
   | 'funnel:started'
   | 'funnel:completed'
   | 'funnel:abandoned'

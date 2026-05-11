@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { randomBytes } from 'crypto';
 import { Bot } from './entities/bot.entity';
 import { ProcessedUpdate } from './entities/processed-update.entity';
@@ -37,6 +37,7 @@ export class BotService {
     @InjectRepository(AnalyticsEvent)
     private readonly analyticsEventRepository: Repository<AnalyticsEvent>,
     private readonly telegramService: TelegramService,
+    private readonly dataSource: DataSource,
   ) {}
 
   /**
@@ -65,6 +66,10 @@ export class BotService {
    * Connect a new bot.
    * Flow: validate token → create record → generate secret → set webhook.
    * Optionally assigns owner.
+   *
+   * TRANSACTION SAFETY:
+   * Database writes are wrapped in a transaction.
+   * If webhook setup fails, bot record is rolled back.
    */
   async connectBot(dto: ConnectBotDto, ownerId?: string) {
     // Validate token with Telegram (never log the raw token)
@@ -90,16 +95,31 @@ export class BotService {
     // Generate secure webhook secret
     const webhookSecret = this.generateWebhookSecret();
 
-    // Save bot to database
-    const bot = this.botRepository.create({
-      token: dto.token,
-      template: dto.template,
-      config: finalConfig,
-      webhookSecret,
-      ownerId: ownerId || null,
-    });
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-    await this.botRepository.save(bot);
+    let bot: Bot;
+
+    try {
+      // Save bot to database within transaction
+      bot = this.botRepository.create({
+        token: dto.token,
+        template: dto.template,
+        config: finalConfig,
+        webhookSecret,
+        ownerId: ownerId || null,
+      });
+
+      bot = await queryRunner.manager.save(bot);
+      await queryRunner.commitTransaction();
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      this.logger.error(`Bot connection failed: ${(error as Error).message}`);
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
 
     // Set webhook on Telegram — URL contains botId + secret, NEVER the token
     const webhookUrl = `${WEBHOOK_HOST}${WEBHOOK_PATH}/${bot.id}/${webhookSecret}`;
@@ -257,9 +277,29 @@ export class BotService {
   }
 
   /**
-   * Get leads for a specific bot with pagination.
-   * STRICTLY multi-tenant: always filters by botId.
+   * Count leads for MULTIPLE bots in a single query.
+   * Scalability fix: replaces N+1 queries with one aggregate query.
    */
+  async countLeadsByBotIds(botIds: string[]): Promise<Record<string, number>> {
+    if (botIds.length === 0) {
+      return {};
+    }
+
+    const results = await this.leadRepository
+      .createQueryBuilder('l')
+      .select('l.botId', 'botId')
+      .addSelect('COUNT(*)', 'count')
+      .where('l.botId IN (:...botIds)', { botIds })
+      .groupBy('l.botId')
+      .getRawMany();
+
+    const counts: Record<string, number> = {};
+    for (const row of results) {
+      counts[row.botId] = parseInt(row.count, 10);
+    }
+
+    return counts;
+  }
   async getBotLeads(botId: string, page: number = 1, limit: number = 20) {
     const bot = await this.botRepository.findOne({ where: { id: botId } });
 

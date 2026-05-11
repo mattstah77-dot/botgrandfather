@@ -55,25 +55,42 @@ export class DashboardService {
 
   /**
    * Get universal stats for an owner across all bots.
+   *
+   * SCALABILITY: Uses single aggregated queries instead of N+1 per bot.
    */
   async getOwnerStats(ownerId: string) {
     const bots = await this.botService.getOwnerBots(ownerId);
 
+    if (bots.length === 0) {
+      return {
+        totalBots: 0,
+        totalCustomers: 0,
+        totalInteractions: 0,
+      };
+    }
+
+    const botIds = bots.map((b) => b.id);
+
+    // Single query: all customer counts for all bots
+    const customerCountsByBot = await this.customerService.countByStatusForBots(botIds);
+
+    // Single query: all lead counts for all bots (template-specific interactions)
+    const leadCountsByBot = await this.botService.countLeadsByBotIds(botIds);
+
     let totalCustomers = 0;
-    let totalLeads = 0;
+    for (const botCounts of Object.values(customerCountsByBot)) {
+      totalCustomers += Object.values(botCounts).reduce((a, b) => a + b, 0);
+    }
 
-    for (const bot of bots) {
-      const customerCount = await this.customerService.countByStatus(bot.id);
-      const leadCount = await this.getBotLeadCount(bot.id);
-
-      totalCustomers += Object.values(customerCount).reduce((a, b) => a + b, 0);
-      totalLeads += leadCount;
+    let totalInteractions = 0;
+    for (const count of Object.values(leadCountsByBot)) {
+      totalInteractions += count;
     }
 
     return {
       totalBots: bots.length,
       totalCustomers,
-      totalLeads,
+      totalInteractions,
     };
   }
 
@@ -105,12 +122,5 @@ export class DashboardService {
   async getBotCustomers(botId: string, page: number, limit: number) {
     return this.customerService.getBotCustomers(botId, page, limit);
   }
-
-  /**
-   * Private helper: count leads for a bot.
-   */
-  private async getBotLeadCount(botId: string): Promise<number> {
-    const result = await this.botService.getBotLeads(botId, 1, 1);
-    return result.pagination.total;
-  }
 }
+

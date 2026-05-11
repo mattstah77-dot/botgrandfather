@@ -29,14 +29,17 @@ export class OwnerViewService {
    * - Owner profile
    * - Bot statistics
    * - Customer metrics
-   * - Lead metrics
+   * - Interaction metrics (template-agnostic)
    * - Navigation
+   *
+   * NOTE: Template-specific metrics (e.g., "Leads", "Bookings")
+   * are provided by OwnerModuleRegistry, not hardcoded here.
    */
   composeDashboardView(
     ownerId: string,
     botCount: number,
     customerCount: number,
-    leadCount: number,
+    interactionCount: number,
     bots: Array<{ id: string; template: string }>,
   ): DashboardView {
     const templates = bots.map((b) => b.template);
@@ -45,7 +48,7 @@ export class OwnerViewService {
     const widgets: DashboardWidget[] = [
       this.createMetricWidget('total-bots', 'Total Bots', botCount),
       this.createMetricWidget('total-customers', 'Total Customers', customerCount),
-      this.createMetricWidget('total-leads', 'Total Leads', leadCount),
+      this.createMetricWidget('total-interactions', 'Interactions', interactionCount),
     ];
 
     return {
@@ -64,6 +67,8 @@ export class OwnerViewService {
    * Compose a bot-specific operational view.
    *
    * Includes template-specific widgets from OwnerModuleRegistry.
+   *
+   * NOTE: Metrics are generic — template-specific labels come from OwnerModuleRegistry.
    */
   composeBotView(
     botId: string,
@@ -78,7 +83,7 @@ export class OwnerViewService {
 
     const widgets: DashboardWidget[] = [
       this.createMetricWidget('bot-customers', 'Customers', botStats.customerCount),
-      this.createMetricWidget('bot-leads', 'Leads', botStats.leadCount),
+      this.createMetricWidget('bot-interactions', 'Interactions', botStats.leadCount),
       this.createMetricWidget('bot-events', 'Events', botStats.eventCount),
     ];
 

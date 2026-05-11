@@ -1,18 +1,21 @@
 import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { OwnershipVerificationService } from './ownership-verification.service';
-import { BotModule } from '../bot/bot.module';
+import { BotOwnershipGuard } from './bot-ownership.guard';
+import { Bot } from '../bot/entities/bot.entity';
 
 /**
  * Ownership Module
  *
- * Provides ownership verification foundation for multi-tenant safety.
- * Import this module when you need to verify bot ownership.
+ * Provides ownership verification for multi-tenant safety.
+ * - OwnershipVerificationService: manual ownership checks
+ * - BotOwnershipGuard: automatic guard for route protection
  *
- * TODO: Integrate with future auth system (JWT, Telegram initData).
+ * Import this module where you need ownership verification.
  */
 @Module({
-  imports: [BotModule],
-  providers: [OwnershipVerificationService],
-  exports: [OwnershipVerificationService],
+  imports: [TypeOrmModule.forFeature([Bot])],
+  providers: [OwnershipVerificationService, BotOwnershipGuard],
+  exports: [OwnershipVerificationService, BotOwnershipGuard],
 })
 export class OwnershipModule {}

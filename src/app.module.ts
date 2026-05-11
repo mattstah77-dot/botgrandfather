@@ -16,6 +16,7 @@ import { OwnerModulesModule } from './owner-modules/owner-modules.module';
 import { CustomerModule } from './customer/customer.module';
 import { OwnershipModule } from './ownership/ownership.module';
 import { Customer } from './customer/entities/customer.entity';
+import { LifecycleModule } from './lifecycle/lifecycle.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { Bot } from './bot/entities/bot.entity';
@@ -51,6 +52,7 @@ import { AnalyticsEvent } from './analytics/entities/analytics-event.entity';
     BillingModule,
     MiniappModule,
     CustomerModule,
+    LifecycleModule,
   ],
   controllers: [AppController],
   providers: [AppService],

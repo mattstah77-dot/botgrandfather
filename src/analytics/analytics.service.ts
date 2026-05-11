@@ -43,24 +43,33 @@ export class AnalyticsService {
 
   /**
    * Get simple stats for a bot.
-   * Future: add date range filtering, grouping, pre-aggregation.
+   *
+   * SCALABILITY: Uses database aggregation (GROUP BY COUNT).
+   * Never loads all events into memory.
    */
   async getBotStats(botId: string): Promise<{
     totalEvents: number;
     eventsByType: Record<string, number>;
   }> {
-    const events = await this.eventRepository.find({
-      where: { botId },
-      select: ['eventType'],
-    });
+    const results = await this.eventRepository
+      .createQueryBuilder('e')
+      .select('e.eventType', 'eventType')
+      .addSelect('COUNT(*)', 'count')
+      .where('e.botId = :botId', { botId })
+      .groupBy('e.eventType')
+      .getRawMany();
 
     const eventsByType: Record<string, number> = {};
-    for (const event of events) {
-      eventsByType[event.eventType] = (eventsByType[event.eventType] || 0) + 1;
+    let totalEvents = 0;
+
+    for (const row of results) {
+      const count = parseInt(row.count, 10);
+      eventsByType[row.eventType] = count;
+      totalEvents += count;
     }
 
     return {
-      totalEvents: events.length,
+      totalEvents,
       eventsByType,
     };
   }

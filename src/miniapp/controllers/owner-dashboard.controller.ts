@@ -1,6 +1,7 @@
-import { Controller, Get, Param, Query, Req, UseGuards, ParseIntPipe, DefaultValuePipe } from '@nestjs/common';
+import { Controller, Get, Param, Query, Req, UseGuards, ParseIntPipe, DefaultValuePipe, UseInterceptors } from '@nestjs/common';
 import type { Request } from 'express';
 import { MiniAppAuthGuard } from '../auth/miniapp-auth.guard';
+import { BotOwnershipGuard } from '../../ownership/bot-ownership.guard';
 import { DashboardService } from '../services/dashboard.service';
 import { OwnerViewService } from '../services/owner-view.service';
 
@@ -12,11 +13,12 @@ import { OwnerViewService } from '../services/owner-view.service';
  * They are template-agnostic — the same endpoints work for lead-funnel,
  * booking, AI assistant, etc.
  *
- * Template-specific rendering is driven by OwnerModuleRegistry metadata,
- * NOT by hardcoded controller logic.
+ * SECURITY:
+ * All bot-scoped endpoints enforce ownership via BotOwnershipGuard.
+ * Cross-tenant access is impossible.
  */
 @Controller('miniapp/bots')
-@UseGuards(MiniAppAuthGuard)
+@UseGuards(MiniAppAuthGuard, BotOwnershipGuard)
 export class OwnerDashboardController {
   constructor(
     private readonly dashboardService: DashboardService,

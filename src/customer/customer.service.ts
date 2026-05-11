@@ -150,8 +150,34 @@ export class CustomerService {
   }
 
   /**
-   * Count customers by status for a bot.
+   * Count customers by status for MULTIPLE bots in a single query.
+   * Scalability fix: replaces N+1 queries with one aggregate query.
    */
+  async countByStatusForBots(botIds: string[]): Promise<Record<string, Record<string, number>>> {
+    if (botIds.length === 0) {
+      return {};
+    }
+
+    const results = await this.customerRepository
+      .createQueryBuilder('c')
+      .select('c.botId', 'botId')
+      .addSelect('c.status', 'status')
+      .addSelect('COUNT(*)', 'count')
+      .where('c.botId IN (:...botIds)', { botIds })
+      .groupBy('c.botId')
+      .addGroupBy('c.status')
+      .getRawMany();
+
+    const grouped: Record<string, Record<string, number>> = {};
+    for (const row of results) {
+      if (!grouped[row.botId]) {
+        grouped[row.botId] = {};
+      }
+      grouped[row.botId][row.status] = parseInt(row.count, 10);
+    }
+
+    return grouped;
+  }
   async countByStatus(botId: string): Promise<Record<string, number>> {
     const results = await this.customerRepository
       .createQueryBuilder('c')

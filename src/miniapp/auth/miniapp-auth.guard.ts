@@ -69,6 +69,7 @@ export class MiniAppAuthGuard implements CanActivate {
       return true;
     } catch (error) {
       if (error instanceof UnauthorizedException) {
+        this.logger.warn(`Mini App auth failed: ${error.message}`);
         throw error;
       }
       this.logger.error(`Auth validation error: ${error}`);

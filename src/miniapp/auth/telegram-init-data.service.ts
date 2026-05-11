@@ -27,8 +27,13 @@ export class TelegramInitDataService {
    * 2. Extract hash signature
    * 3. Recompute HMAC-SHA256
    * 4. Compare signatures
-   * 5. Find or create Owner
-   * 6. Return session
+   * 5. Validate auth_date (replay protection)
+   * 6. Find or create Owner
+   * 7. Return session
+   *
+   * SECURITY:
+   * - auth_date must be within max age (1 hour default)
+   * - Prevents replay attacks with old initData
    *
    * @param initData Raw initData string from Telegram WebApp
    * @returns MiniAppSession
@@ -58,6 +63,31 @@ export class TelegramInitDataService {
     if (!isValid) {
       this.logger.warn('initData signature validation failed');
       throw new UnauthorizedException('Invalid initData signature');
+    }
+
+    // Validate auth_date (replay protection)
+    const authDate = params.get('auth_date');
+    if (!authDate) {
+      throw new UnauthorizedException('Missing auth_date in initData');
+    }
+
+    const authTimestamp = parseInt(authDate, 10);
+    if (isNaN(authTimestamp)) {
+      throw new UnauthorizedException('Invalid auth_date format');
+    }
+
+    const maxAgeSeconds = parseInt(
+      process.env.INIT_DATA_MAX_AGE_SECONDS || '3600',
+      10,
+    ); // 1 hour default
+    const now = Math.floor(Date.now() / 1000);
+    const age = now - authTimestamp;
+
+    if (age > maxAgeSeconds) {
+      this.logger.warn(
+        `initData too old: age=${age}s maxAge=${maxAgeSeconds}s`,
+      );
+      throw new UnauthorizedException('initData expired');
     }
 
     // Extract user from initData

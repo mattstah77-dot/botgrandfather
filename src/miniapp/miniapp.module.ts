@@ -7,6 +7,7 @@ import { DashboardService } from './services/dashboard.service';
 import { NavigationService } from './services/navigation.service';
 import { OwnerViewService } from './services/owner-view.service';
 import { OwnerModule } from '../owner/owner.module';
+import { OwnershipModule } from '../ownership/ownership.module';
 import { BotModule } from '../bot/bot.module';
 import { CustomerModule } from '../customer/customer.module';
 import { AnalyticsModule } from '../analytics/analytics.module';
@@ -34,7 +35,7 @@ import { AnalyticsModule } from '../analytics/analytics.module';
  * - Monolithic dashboard
  */
 @Module({
-  imports: [OwnerModule, BotModule, CustomerModule, AnalyticsModule],
+  imports: [OwnerModule, BotModule, CustomerModule, AnalyticsModule, OwnershipModule],
   controllers: [MiniappController, OwnerDashboardController],
   providers: [
     TelegramInitDataService,

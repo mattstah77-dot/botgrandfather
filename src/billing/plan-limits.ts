@@ -4,8 +4,9 @@
  */
 export interface PlanLimits {
   maxBots: number;
-  maxLeadsPerMonth: number;
-  maxFunnels: number;
+  // Generic interaction quota (replaces lead/funnel specific limits)
+  maxInteractionsPerMonth: number;
+  maxFlows: number;
   allowedTemplates: string[];
   analyticsEnabled: boolean;
   customBranding: boolean;
@@ -19,8 +20,8 @@ export interface PlanLimits {
 export const PLAN_DEFINITIONS: Record<string, PlanLimits> = {
   free: {
     maxBots: 1,
-    maxLeadsPerMonth: 50,
-    maxFunnels: 1,
+    maxInteractionsPerMonth: 50,
+    maxFlows: 1,
     allowedTemplates: ['lead-funnel'],
     analyticsEnabled: false,
     customBranding: false,
@@ -28,8 +29,8 @@ export const PLAN_DEFINITIONS: Record<string, PlanLimits> = {
   },
   starter: {
     maxBots: 3,
-    maxLeadsPerMonth: 500,
-    maxFunnels: 5,
+    maxInteractionsPerMonth: 500,
+    maxFlows: 5,
     allowedTemplates: ['lead-funnel', 'booking'],
     analyticsEnabled: true,
     customBranding: false,
@@ -37,8 +38,8 @@ export const PLAN_DEFINITIONS: Record<string, PlanLimits> = {
   },
   pro: {
     maxBots: 10,
-    maxLeadsPerMonth: 5000,
-    maxFunnels: 20,
+    maxInteractionsPerMonth: 5000,
+    maxFlows: 20,
     allowedTemplates: ['*'], // all templates
     analyticsEnabled: true,
     customBranding: true,

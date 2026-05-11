@@ -1,6 +1,6 @@
 import { Controller, Get, Req, UseGuards } from '@nestjs/common';
-import type { Request } from 'express';
 import { MiniAppAuthGuard } from '../auth/miniapp-auth.guard';
+import type { MiniAppRequest } from '../auth/miniapp-auth.guard';
 import { DashboardService } from '../services/dashboard.service';
 import { OwnerViewService } from '../services/owner-view.service';
 import { NavigationService } from '../services/navigation.service';
@@ -33,7 +33,7 @@ export class MiniappController {
    * - Dashboard widgets
    */
   @Get('dashboard')
-  async getDashboard(@Req() req: Request) {
+  async getDashboard(@Req() req: MiniAppRequest) {
     const session = req.miniAppSession!;
     const ownerId = session.ownerId;
 
@@ -47,7 +47,7 @@ export class MiniappController {
       ownerId,
       stats.totalBots,
       stats.totalCustomers,
-      stats.totalLeads,
+      stats.totalInteractions,
       bots.map((b) => ({ id: b.id, template: b.template })),
     );
 
@@ -71,7 +71,7 @@ export class MiniappController {
    * Merges universal + template-specific navigation.
    */
   @Get('navigation')
-  async getNavigation(@Req() req: Request) {
+  async getNavigation(@Req() req: MiniAppRequest) {
     const session = req.miniAppSession!;
     const bots = await this.dashboardService.getOwnerBots(session.ownerId);
     const templates = bots.map((b) => b.template);
@@ -87,7 +87,7 @@ export class MiniappController {
    * Returns current owner profile.
    */
   @Get('me')
-  async getMe(@Req() req: Request) {
+  async getMe(@Req() req: MiniAppRequest) {
     const session = req.miniAppSession!;
     const profile = await this.dashboardService.getOwnerProfile(session.ownerId);
 
