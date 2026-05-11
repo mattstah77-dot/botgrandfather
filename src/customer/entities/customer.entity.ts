@@ -5,6 +5,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   Index,
+  Unique,
 } from 'typeorm';
 
 /**
@@ -18,6 +19,7 @@ import {
  */
 @Entity('customers')
 @Index(['botId', 'telegramUserId'])
+@Unique(['botId', 'telegramUserId'])
 export class Customer {
   @PrimaryGeneratedColumn('uuid')
   id: string;

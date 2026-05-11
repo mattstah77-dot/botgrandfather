@@ -14,6 +14,7 @@ import { MiniappModule } from './miniapp/miniapp.module';
 import { RuntimeModule } from './runtime/runtime.module';
 import { OwnerModulesModule } from './owner-modules/owner-modules.module';
 import { CustomerModule } from './customer/customer.module';
+import { OwnershipModule } from './ownership/ownership.module';
 import { Customer } from './customer/entities/customer.entity';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -38,6 +39,7 @@ import { AnalyticsEvent } from './analytics/entities/analytics-event.entity';
     }),
     RuntimeModule,
     OwnerModulesModule,
+    OwnershipModule,
     BotModule,
     WebhookModule,
     TemplateModule,

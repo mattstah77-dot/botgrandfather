@@ -17,6 +17,7 @@ import {
   isValidTemplate,
   VALID_TEMPLATE_NAMES,
 } from '../templates/common/template.registry';
+import { AnalyticsEvent } from '../analytics/entities/analytics-event.entity';
 
 /**
  * SINGLETON: One BotService handles ALL bots as database records.
@@ -33,6 +34,8 @@ export class BotService {
     private readonly processedUpdateRepository: Repository<ProcessedUpdate>,
     @InjectRepository(Lead)
     private readonly leadRepository: Repository<Lead>,
+    @InjectRepository(AnalyticsEvent)
+    private readonly analyticsEventRepository: Repository<AnalyticsEvent>,
     private readonly telegramService: TelegramService,
   ) {}
 
@@ -41,6 +44,21 @@ export class BotService {
    */
   private generateWebhookSecret(): string {
     return randomBytes(24).toString('hex'); // 48 hex chars
+  }
+
+  /**
+   * Sanitize config for API responses.
+   * Removes sensitive fields that should never be exposed.
+   */
+  private sanitizeConfig(config: Record<string, any>): Record<string, any> {
+    const sanitized = { ...config };
+    
+    // Remove sensitive keys
+    delete sanitized.ownerChatId;
+    delete sanitized.webhookSecret;
+    delete sanitized.token;
+    
+    return sanitized;
   }
 
   /**
@@ -178,21 +196,23 @@ export class BotService {
   }
 
   /**
-   * Get all bots (token excluded).
+   * Get all bots (token excluded, webhookSecret excluded).
+   * WARNING: This endpoint is public — remove or protect before production.
    */
   async getAllBots() {
     return this.botRepository.find({
-      select: ['id', 'template', 'config', 'webhookSecret', 'createdAt', 'updatedAt'],
+      select: ['id', 'template', 'config', 'createdAt', 'updatedAt'],
     });
   }
 
   /**
    * Get all bots owned by a specific owner.
+   * Excludes sensitive fields (token, webhookSecret).
    */
   async getOwnerBots(ownerId: string) {
     return this.botRepository.find({
       where: { ownerId },
-      select: ['id', 'template', 'config', 'webhookSecret', 'createdAt', 'updatedAt'],
+      select: ['id', 'template', 'config', 'createdAt', 'updatedAt'],
       order: { createdAt: 'DESC' },
     });
   }
@@ -222,8 +242,8 @@ export class BotService {
     // Count leads
     const leadCount = await this.leadRepository.count({ where: { botId } });
 
-    // Count processed updates (proxy for total interactions)
-    const eventCount = await this.processedUpdateRepository.count({ where: { botId } });
+    // Count analytics events (business events, not webhook deliveries)
+    const eventCount = await this.analyticsEventRepository.count({ where: { botId } });
 
     return {
       id: bot.id,
@@ -312,10 +332,14 @@ export class BotService {
   }
 
   /**
-   * Transform bot to response format (exclude token).
+   * Transform bot to response format (exclude token and webhookSecret).
+   * Sanitizes config to remove sensitive fields.
    */
-  private toBotResponse(bot: Bot): Omit<Bot, 'token'> {
-    const { token, ...botWithoutToken } = bot;
-    return botWithoutToken;
+  private toBotResponse(bot: Bot): Omit<Bot, 'token' | 'webhookSecret'> & { config: Record<string, any> } {
+    const { token, webhookSecret, ...botWithoutSensitive } = bot;
+    return {
+      ...botWithoutSensitive,
+      config: this.sanitizeConfig(bot.config),
+    };
   }
 }

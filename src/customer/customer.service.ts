@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, QueryFailedError } from 'typeorm';
 import { Customer } from './entities/customer.entity';
 
 /**
@@ -22,6 +22,10 @@ export class CustomerService {
   /**
    * Find or create a Customer for a bot user.
    * Called on every significant user interaction.
+   *
+   * RACE CONDITION HANDLING:
+   * If two concurrent webhooks try to create the same customer,
+   * unique constraint violation is caught and we retry the lookup.
    */
   async ensureCustomer(
     botId: string,
@@ -46,10 +50,39 @@ export class CustomerService {
         status: 'new',
         tags: [],
       });
-      await this.customerRepository.save(customer);
-      this.logger.log(`Customer created: bot=${botId} user=${telegramUserId}`);
-    } else if (profile) {
-      // Update profile if changed
+
+      try {
+        await this.customerRepository.save(customer);
+        this.logger.log(`Customer created: bot=${botId} user=${telegramUserId}`);
+      } catch (error) {
+        // Unique constraint violation — another webhook created the customer first
+        if (error instanceof QueryFailedError) {
+          const driverError = error.driverError;
+          // PostgreSQL unique violation error code: 23505
+          const isUniqueViolation = driverError?.code === '23505' || 
+                                   (driverError?.message && driverError.message.includes('unique'));
+          
+          if (isUniqueViolation) {
+            this.logger.debug(`Race condition resolved: customer already exists for bot=${botId} user=${telegramUserId}`);
+            // Retry lookup
+            customer = await this.customerRepository.findOne({
+              where: { botId, telegramUserId: BigInt(telegramUserId) },
+            });
+            if (!customer) {
+              this.logger.error(`Unexpected: customer not found after unique violation: bot=${botId} user=${telegramUserId}`);
+              throw error;
+            }
+          } else {
+            throw error;
+          }
+        } else {
+          throw error;
+        }
+      }
+    }
+
+    // Update profile if changed
+    if (customer && profile) {
       let changed = false;
       if (profile.username !== undefined && customer.username !== profile.username) {
         customer.username = profile.username || null;
@@ -68,21 +101,26 @@ export class CustomerService {
       }
     }
 
-    return customer;
+    return customer!;
   }
 
   /**
    * Update customer status.
+   * Logs warning if customer not found (does not throw).
    */
   async updateStatus(
     botId: string,
     telegramUserId: number,
     status: 'new' | 'active' | 'converted',
   ): Promise<void> {
-    await this.customerRepository.update(
+    const result = await this.customerRepository.update(
       { botId, telegramUserId: BigInt(telegramUserId) },
       { status },
     );
+
+    if (result.affected === 0) {
+      this.logger.warn(`Customer not found for status update: bot=${botId} user=${telegramUserId}`);
+    }
   }
 
   /**

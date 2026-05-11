@@ -5,6 +5,7 @@ import { BotService } from './bot.service';
 import { Bot } from './entities/bot.entity';
 import { ProcessedUpdate } from './entities/processed-update.entity';
 import { Lead } from './entities/lead.entity';
+import { AnalyticsEvent } from '../analytics/entities/analytics-event.entity';
 import { TelegramService } from '../telegram/telegram.service';
 
 describe('BotService', () => {
@@ -12,6 +13,7 @@ describe('BotService', () => {
   let botRepository: Repository<Bot>;
   let processedUpdateRepository: Repository<ProcessedUpdate>;
   let leadRepository: Repository<Lead>;
+  let analyticsEventRepository: Repository<AnalyticsEvent>;
   let telegramService: TelegramService;
 
   beforeEach(async () => {
@@ -31,6 +33,10 @@ describe('BotService', () => {
           useClass: Repository,
         },
         {
+          provide: getRepositoryToken(AnalyticsEvent),
+          useClass: Repository,
+        },
+        {
           provide: TelegramService,
           useValue: {
             validateToken: jest.fn(),
@@ -46,6 +52,7 @@ describe('BotService', () => {
     botRepository = module.get<Repository<Bot>>(getRepositoryToken(Bot));
     processedUpdateRepository = module.get<Repository<ProcessedUpdate>>(getRepositoryToken(ProcessedUpdate));
     leadRepository = module.get<Repository<Lead>>(getRepositoryToken(Lead));
+    analyticsEventRepository = module.get<Repository<AnalyticsEvent>>(getRepositoryToken(AnalyticsEvent));
     telegramService = module.get<TelegramService>(TelegramService);
   });
 

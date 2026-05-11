@@ -38,6 +38,9 @@ export class OwnerController {
         status: 'active',
         createdAt: bot.createdAt,
       })),
+      pagination: {
+        total: bots.length,
+      },
     };
   }
 }

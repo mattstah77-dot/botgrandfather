@@ -31,6 +31,10 @@ export class BotController {
     await this.botService.deleteBot(id);
   }
 
+  /**
+   * WARNING: This endpoint exposes all bots on the platform.
+   * Remove or protect with admin auth before production.
+   */
   @Get()
   async getAllBots() {
     return this.botService.getAllBots();
