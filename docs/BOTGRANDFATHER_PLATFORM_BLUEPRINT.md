@@ -9,6 +9,50 @@
 
 ## 1. PROJECT IDENTITY
 
+### 1.0 CURRENT MOST IMPORTANT RISK: PREMATURE PLATFORM ABSTRACTION
+
+**WARNING:** The single biggest risk to BotGrandFather is **accidental framework-building** — creating overly generic systems before proven repetition.
+
+**Specific Dangers:**
+
+**1. Over-Generalization**
+- Creating "Universal Workflow Engine" before building 3+ workflow templates
+- Abstracting "Generic Form Builder" before building 3+ form templates
+- Designing "Plugin System" before having 10+ real templates
+- **Result:** Complexity explosion, platform becomes unmaintainable
+
+**2. Abstraction-Before-Repetition**
+- Abstracting Customer after 1 template ❌
+- Abstracting Analytics after 1 template ❌
+- Abstracting after 3+ templates ✅
+- **Rule:** "Abstract only proven repetition"
+
+**3. Premature SDK Complexity**
+- Designing SDK for external developers before contracts are stable
+- Adding npm package scanning before manual registration is painful
+- Creating sandboxed runtime before security review
+- **Result:** Breaking changes, lost trust, maintenance nightmare
+
+**4. Metadata Obsession**
+- Making metadata the GOAL instead of the TOOL
+- Creating recursive schema engines
+- Building "schema-of-schema" validation
+- **Result:** Frontend becomes complex, business logic hidden in JSON
+
+**5. Accidental Framework Construction**
+- "Let's build a platform for building platforms"
+- "Let's make it configurable for ANY use case"
+- "Let's create universal no-code abstractions"
+- **Result:** Framework complexity, platform loses focus
+
+**Mitigation:**
+- Read `ARCHITECTURAL_INVARIANTS.md` before ANY new feature
+- Ask: "Is abstraction justified by proven repetition?"
+- Ask: "Does this strengthen platform universality?"
+- Ask: "Is this too early for current architecture maturity?"
+
+---
+
 ### 1.1 What BotGrandFather Is
 
 **BotGrandFather** is a **universal Telegram bot operations platform** that enables businesses to deploy, manage, and operate multiple Telegram bots from a single operational dashboard.
@@ -2478,6 +2522,55 @@ src/
 ---
 
 ## 16. ABSOLUTE ARCHITECTURAL INVARIANTS
+
+### 16.0 DEVELOPMENT ALIGNMENT — MANDATORY SELF-CHECK
+
+**BEFORE IMPLEMENTING ANY NEW FEATURE:**
+
+Every agent MUST evaluate the following questions before writing code:
+
+**1. Does this strengthen platform universality?**
+- ✅ Yes: Adding generic "Interactions" metric (works for all templates)
+- ❌ No: Adding "Leads" metric (only works for lead-funnel)
+- ❓ Unclear: Reconsider, consult maintainers
+
+**2. Does this introduce template coupling?**
+- ✅ No: CustomerService has ZERO references to templates
+- ❌ Yes: CustomerService imports LeadFunnelService
+- ❓ Unclear: Refactor to remove coupling
+
+**3. Is abstraction justified by proven repetition?**
+- ✅ Yes: 3+ templates need same pattern → abstract
+- ❌ No: 1-2 templates need pattern → implement manually
+- ❓ Unclear: Build manually, watch for repetition
+
+**4. Does this preserve runtime/operational separation?**
+- ✅ Yes: Runtime does NOT import Mini App
+- ❌ No: WebhookService imports DashboardService
+- ❓ Unclear: Refactor to break dependency
+
+**5. Does this improve ecosystem extensibility?**
+- ✅ Yes: Adding OwnerModuleRegistry metadata
+- ❌ No: Hardcoding template UI in controllers
+- ❓ Unclear: Prefer metadata-driven approach
+
+**6. Does this introduce accidental framework complexity?**
+- ✅ No: Simple, explicit contracts
+- ❌ Yes: Recursive schema engines, universal builders
+- ❓ Unclear: Simplify, remove abstraction
+
+**7. Is this too early for current architecture maturity?**
+- ✅ No: Solves immediate need (booking template)
+- ❌ Yes: "Let's build plugin system" (10+ templates needed first)
+- ❓ Unclear: Wait, build simpler solution first
+
+**If ANY answer is ❌:**
+1. STOP
+2. Re-read `ARCHITECTURAL_INVARIANTS.md`
+3. Consult with platform maintainers
+4. Reconsider approach
+
+---
 
 ### 16.1 NON-NEGOTIABLE Rules
 
