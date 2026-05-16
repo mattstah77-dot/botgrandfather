@@ -2,7 +2,7 @@ import { Controller, Get, Post, Patch, Body, Param, Delete, HttpCode, HttpStatus
 import { BotService } from './bot.service';
 import { CustomerService } from '../customer/customer.service';
 import { ConnectBotDto, UpdateBotConfigDto } from './dto/bot.dto';
-import { BotOwnershipGuard } from './bot-ownership.guard';
+import { BotOwnershipGuard } from '../ownership/bot-ownership.guard';
 import { MiniAppAuthGuard } from '../miniapp/auth/miniapp-auth.guard';
 import type { MiniAppRequest } from '../miniapp/auth/miniapp-auth.guard';
 
