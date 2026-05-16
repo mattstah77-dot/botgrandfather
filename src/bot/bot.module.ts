@@ -5,6 +5,7 @@ import { BotService } from './bot.service';
 import { TelegramModule } from '../telegram/telegram.module';
 import { CustomerModule } from '../customer/customer.module';
 import { OwnershipModule } from '../ownership/ownership.module';
+import { MiniAppAuthModule } from '../miniapp/auth/miniapp-auth.module';
 import { AnalyticsEvent } from '../analytics/entities/analytics-event.entity';
 import { Bot } from './entities/bot.entity';
 import { UserState } from './entities/user-state.entity';
@@ -17,6 +18,7 @@ import { Booking } from '../templates/booking/entities/booking.entity';
     TelegramModule,
     CustomerModule,
     OwnershipModule,
+    MiniAppAuthModule,
     TypeOrmModule.forFeature([Bot, UserState, ProcessedUpdate, Lead, AnalyticsEvent, Booking]),
   ],
   controllers: [BotController],

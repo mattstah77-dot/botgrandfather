@@ -2,8 +2,7 @@ import { Module } from '@nestjs/common';
 import { MiniappController } from './controllers/miniapp.controller';
 import { OwnerDashboardController } from './controllers/owner-dashboard.controller';
 import { BookingDashboardController } from './controllers/booking-dashboard.controller';
-import { TelegramInitDataService } from './auth/telegram-init-data.service';
-import { MiniAppAuthGuard } from './auth/miniapp-auth.guard';
+import { MiniAppAuthModule } from './auth/miniapp-auth.module';
 import { DashboardService } from './services/dashboard.service';
 import { NavigationService } from './services/navigation.service';
 import { OwnerViewService } from './services/owner-view.service';
@@ -29,7 +28,7 @@ import { TemplateModule } from '../templates/template.module';
  * ARCHITECTURE:
  * - Controllers: API endpoints (owner-level + bot-level)
  * - Services: Data aggregation, view composition, navigation
- * - Auth: Telegram initData validation + guard
+ * - Auth: Telegram initData validation + guard (via MiniAppAuthModule)
  *
  * NOT:
  * - Runtime engine
@@ -37,15 +36,13 @@ import { TemplateModule } from '../templates/template.module';
  * - Monolithic dashboard
  */
 @Module({
-  imports: [OwnerModule, BotModule, CustomerModule, AnalyticsModule, OwnershipModule, TemplateModule],
+  imports: [OwnerModule, BotModule, CustomerModule, AnalyticsModule, OwnershipModule, TemplateModule, MiniAppAuthModule],
   controllers: [MiniappController, OwnerDashboardController, BookingDashboardController],
   providers: [
-    TelegramInitDataService,
-    MiniAppAuthGuard,
     DashboardService,
     NavigationService,
     OwnerViewService,
   ],
-  exports: [TelegramInitDataService, MiniAppAuthGuard],
+  exports: [],
 })
 export class MiniappModule {}

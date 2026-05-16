@@ -23,6 +23,7 @@ import { Bot } from './bot/entities/bot.entity';
 import { UserState } from './bot/entities/user-state.entity';
 import { ProcessedUpdate } from './bot/entities/processed-update.entity';
 import { Lead } from './bot/entities/lead.entity';
+import { Booking } from './templates/booking/entities/booking.entity';
 import { Owner } from './owner/entities/owner.entity';
 import { AnalyticsEvent } from './analytics/entities/analytics-event.entity';
 
@@ -35,7 +36,7 @@ import { AnalyticsEvent } from './analytics/entities/analytics-event.entity';
     TypeOrmModule.forRoot({
       type: 'postgres',
       url: process.env.DATABASE_URL,
-      entities: [Bot, UserState, ProcessedUpdate, Lead, Owner, AnalyticsEvent, Customer],
+      entities: [Bot, UserState, ProcessedUpdate, Lead, Booking, Owner, AnalyticsEvent, Customer],
       synchronize: process.env.TYPEORM_SYNC !== 'false',
     }),
     RuntimeModule,
