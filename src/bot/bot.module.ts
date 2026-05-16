@@ -10,13 +10,14 @@ import { Bot } from './entities/bot.entity';
 import { UserState } from './entities/user-state.entity';
 import { ProcessedUpdate } from './entities/processed-update.entity';
 import { Lead } from './entities/lead.entity';
+import { Booking } from '../templates/booking/entities/booking.entity';
 
 @Module({
   imports: [
     TelegramModule,
     CustomerModule,
     OwnershipModule,
-    TypeOrmModule.forFeature([Bot, UserState, ProcessedUpdate, Lead, AnalyticsEvent]),
+    TypeOrmModule.forFeature([Bot, UserState, ProcessedUpdate, Lead, AnalyticsEvent, Booking]),
   ],
   controllers: [BotController],
   providers: [BotService],

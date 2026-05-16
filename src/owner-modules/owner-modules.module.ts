@@ -15,6 +15,9 @@ import { OwnerModulesController } from './owner-modules.controller';
 // Side-effect: registers lead-funnel owner module
 import './lead-funnel/lead-funnel.owner-module';
 
+// Side-effect: registers booking owner module
+import '../templates/booking/booking.owner-module';
+
 @Module({
   controllers: [OwnerModulesController],
   providers: [],

@@ -76,6 +76,7 @@ export class OwnerViewService {
     botStats: {
       customerCount: number;
       leadCount: number;
+      bookingCount: number;
       eventCount: number;
     },
   ): OwnerView {
@@ -83,7 +84,7 @@ export class OwnerViewService {
 
     const widgets: DashboardWidget[] = [
       this.createMetricWidget('bot-customers', 'Customers', botStats.customerCount),
-      this.createMetricWidget('bot-interactions', 'Interactions', botStats.leadCount),
+      this.createMetricWidget('bot-interactions', 'Interactions', botStats.leadCount + botStats.bookingCount),
       this.createMetricWidget('bot-events', 'Events', botStats.eventCount),
     ];
 

@@ -1,10 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { BotService } from './bot.service';
 import { Bot } from './entities/bot.entity';
 import { ProcessedUpdate } from './entities/processed-update.entity';
 import { Lead } from './entities/lead.entity';
+import { Booking } from '../templates/booking/entities/booking.entity';
 import { AnalyticsEvent } from '../analytics/entities/analytics-event.entity';
 import { TelegramService } from '../telegram/telegram.service';
 
@@ -13,6 +14,7 @@ describe('BotService', () => {
   let botRepository: Repository<Bot>;
   let processedUpdateRepository: Repository<ProcessedUpdate>;
   let leadRepository: Repository<Lead>;
+  let bookingRepository: Repository<Booking>;
   let analyticsEventRepository: Repository<AnalyticsEvent>;
   let telegramService: TelegramService;
 
@@ -33,6 +35,10 @@ describe('BotService', () => {
           useClass: Repository,
         },
         {
+          provide: getRepositoryToken(Booking),
+          useClass: Repository,
+        },
+        {
           provide: getRepositoryToken(AnalyticsEvent),
           useClass: Repository,
         },
@@ -45,6 +51,22 @@ describe('BotService', () => {
             getWebhookInfo: jest.fn(),
           },
         },
+        {
+          provide: DataSource,
+          useValue: {
+            createQueryRunner: jest.fn().mockReturnValue({
+              connect: jest.fn(),
+              startTransaction: jest.fn(),
+              commitTransaction: jest.fn(),
+              rollbackTransaction: jest.fn(),
+              release: jest.fn(),
+              manager: {
+                save: jest.fn(),
+                update: jest.fn(),
+              },
+            }),
+          },
+        },
       ],
     }).compile();
 
@@ -52,6 +74,7 @@ describe('BotService', () => {
     botRepository = module.get<Repository<Bot>>(getRepositoryToken(Bot));
     processedUpdateRepository = module.get<Repository<ProcessedUpdate>>(getRepositoryToken(ProcessedUpdate));
     leadRepository = module.get<Repository<Lead>>(getRepositoryToken(Lead));
+    bookingRepository = module.get<Repository<Booking>>(getRepositoryToken(Booking));
     analyticsEventRepository = module.get<Repository<AnalyticsEvent>>(getRepositoryToken(AnalyticsEvent));
     telegramService = module.get<TelegramService>(TelegramService);
   });

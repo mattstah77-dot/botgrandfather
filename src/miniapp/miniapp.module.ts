@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { MiniappController } from './controllers/miniapp.controller';
 import { OwnerDashboardController } from './controllers/owner-dashboard.controller';
+import { BookingDashboardController } from './controllers/booking-dashboard.controller';
 import { TelegramInitDataService } from './auth/telegram-init-data.service';
 import { MiniAppAuthGuard } from './auth/miniapp-auth.guard';
 import { DashboardService } from './services/dashboard.service';
@@ -11,6 +12,7 @@ import { OwnershipModule } from '../ownership/ownership.module';
 import { BotModule } from '../bot/bot.module';
 import { CustomerModule } from '../customer/customer.module';
 import { AnalyticsModule } from '../analytics/analytics.module';
+import { TemplateModule } from '../templates/template.module';
 
 /**
  * Mini App Module — operational control center for BotGrandFather platform.
@@ -35,8 +37,8 @@ import { AnalyticsModule } from '../analytics/analytics.module';
  * - Monolithic dashboard
  */
 @Module({
-  imports: [OwnerModule, BotModule, CustomerModule, AnalyticsModule, OwnershipModule],
-  controllers: [MiniappController, OwnerDashboardController],
+  imports: [OwnerModule, BotModule, CustomerModule, AnalyticsModule, OwnershipModule, TemplateModule],
+  controllers: [MiniappController, OwnerDashboardController, BookingDashboardController],
   providers: [
     TelegramInitDataService,
     MiniAppAuthGuard,

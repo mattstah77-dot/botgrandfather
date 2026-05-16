@@ -5,6 +5,7 @@ import { randomBytes } from 'crypto';
 import { Bot } from './entities/bot.entity';
 import { ProcessedUpdate } from './entities/processed-update.entity';
 import { Lead } from './entities/lead.entity';
+import { Booking } from '../templates/booking/entities/booking.entity';
 import { ConnectBotDto, UpdateBotConfigDto } from './dto/bot.dto';
 import { TelegramService } from '../telegram/telegram.service';
 import { WEBHOOK_HOST, WEBHOOK_PATH } from '../config/env.config';
@@ -34,6 +35,8 @@ export class BotService {
     private readonly processedUpdateRepository: Repository<ProcessedUpdate>,
     @InjectRepository(Lead)
     private readonly leadRepository: Repository<Lead>,
+    @InjectRepository(Booking)
+    private readonly bookingRepository: Repository<Booking>,
     @InjectRepository(AnalyticsEvent)
     private readonly analyticsEventRepository: Repository<AnalyticsEvent>,
     private readonly telegramService: TelegramService,
@@ -239,7 +242,7 @@ export class BotService {
 
   /**
    * Get lightweight overview for a bot.
-   * Returns basic bot info + counts (customers, leads, events).
+   * Returns basic bot info + counts (customers, leads, bookings, events).
    */
   async getBotOverview(botId: string): Promise<{
     id: string;
@@ -248,6 +251,7 @@ export class BotService {
     updatedAt: Date;
     customerCount: number;
     leadCount: number;
+    bookingCount: number;
     eventCount: number;
   }> {
     const bot = await this.botRepository.findOne({
@@ -262,6 +266,9 @@ export class BotService {
     // Count leads
     const leadCount = await this.leadRepository.count({ where: { botId } });
 
+    // Count bookings
+    const bookingCount = await this.bookingRepository.count({ where: { botId } });
+
     // Count analytics events (business events, not webhook deliveries)
     const eventCount = await this.analyticsEventRepository.count({ where: { botId } });
 
@@ -272,6 +279,7 @@ export class BotService {
       updatedAt: bot.updatedAt,
       customerCount: 0, // Will be populated by controller using CustomerService
       leadCount,
+      bookingCount,
       eventCount,
     };
   }
@@ -291,6 +299,31 @@ export class BotService {
       .addSelect('COUNT(*)', 'count')
       .where('l.botId IN (:...botIds)', { botIds })
       .groupBy('l.botId')
+      .getRawMany();
+
+    const counts: Record<string, number> = {};
+    for (const row of results) {
+      counts[row.botId] = parseInt(row.count, 10);
+    }
+
+    return counts;
+  }
+
+  /**
+   * Count bookings for MULTIPLE bots in a single query.
+   * Scalability fix: replaces N+1 queries with one aggregate query.
+   */
+  async countBookingsByBotIds(botIds: string[]): Promise<Record<string, number>> {
+    if (botIds.length === 0) {
+      return {};
+    }
+
+    const results = await this.bookingRepository
+      .createQueryBuilder('b')
+      .select('b.botId', 'botId')
+      .addSelect('COUNT(*)', 'count')
+      .where('b.botId IN (:...botIds)', { botIds })
+      .groupBy('b.botId')
       .getRawMany();
 
     const counts: Record<string, number> = {};

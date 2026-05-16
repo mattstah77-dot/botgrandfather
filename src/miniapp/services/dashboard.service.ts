@@ -77,6 +77,9 @@ export class DashboardService {
     // Single query: all lead counts for all bots (template-specific interactions)
     const leadCountsByBot = await this.botService.countLeadsByBotIds(botIds);
 
+    // Single query: all booking counts for all bots (template-specific interactions)
+    const bookingCountsByBot = await this.botService.countBookingsByBotIds(botIds);
+
     let totalCustomers = 0;
     for (const botCounts of Object.values(customerCountsByBot)) {
       totalCustomers += Object.values(botCounts).reduce((a, b) => a + b, 0);
@@ -84,6 +87,9 @@ export class DashboardService {
 
     let totalInteractions = 0;
     for (const count of Object.values(leadCountsByBot)) {
+      totalInteractions += count;
+    }
+    for (const count of Object.values(bookingCountsByBot)) {
       totalInteractions += count;
     }
 

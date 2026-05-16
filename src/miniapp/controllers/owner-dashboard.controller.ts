@@ -64,6 +64,7 @@ export class OwnerDashboardController {
       {
         customerCount: stats.customerCount,
         leadCount: stats.leadCount,
+        bookingCount: stats.bookingCount,
         eventCount: stats.eventCount,
       },
     );

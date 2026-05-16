@@ -3,6 +3,8 @@ import { leadFunnelConfigSchema } from '../lead-funnel/lead-funnel.config.schema
 import { template1ConfigSchema } from '../template1/template1.config.schema';
 import { template2ConfigSchema } from '../template2/template2.config.schema';
 import { template3ConfigSchema } from '../template3/template3.config.schema';
+import { bookingConfigSchema } from '../booking/booking.config.schema';
+import { bookingDefaultConfig } from '../booking/booking.config.schema';
 
 export interface TemplateRegistryEntry {
   readonly name: string;
@@ -67,6 +69,11 @@ export const TEMPLATE_REGISTRY: Readonly<Record<string, TemplateRegistryEntry>> 
         text: 'Our manager will contact you soon.',
       },
     },
+  },
+  booking: {
+    name: 'booking',
+    configSchema: bookingConfigSchema,
+    defaultConfig: bookingDefaultConfig,
   },
 };
 

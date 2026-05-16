@@ -10,6 +10,8 @@ import { Template2Service } from './template2/template2.service';
 import { Template2Handler } from './template2/template2.handler';
 import { Template3Service } from './template3/template3.service';
 import { Template3Handler } from './template3/template3.handler';
+import { BookingService } from './booking/booking.service';
+import { BookingHandler } from './booking/booking.handler';
 
 /**
  * SINGLETON: One TemplateFactory holds ALL template handlers.
@@ -27,6 +29,7 @@ export class TemplateFactory {
     private readonly template2Service: Template2Service,
     private readonly template3Service: Template3Service,
     private readonly leadFunnelService: LeadFunnelService,
+    private readonly bookingService: BookingService,
   ) {
     this.initializeHandlers();
   }
@@ -37,6 +40,7 @@ export class TemplateFactory {
     this.handlers.set('template2', new Template2Handler(this.template2Service));
     this.handlers.set('template3', new Template3Handler(this.template3Service));
     this.handlers.set('lead-funnel', new LeadFunnelHandler(this.leadFunnelService, this.telegramService));
+    this.handlers.set('booking', new BookingHandler(this.bookingService, this.telegramService));
   }
 
   /**
