@@ -8,7 +8,7 @@ import {
   DefaultValuePipe,
 } from '@nestjs/common';
 import { MiniAppAuthGuard } from '../auth/miniapp-auth.guard';
-import { BotOwnershipGuard } from '../../ownership/bot-ownership.guard';
+import { BotOwnershipGuard } from '../../bot/bot-ownership.guard';
 import { BookingService } from '../../templates/booking/booking.service';
 
 /**

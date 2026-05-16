@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Bot } from '../bot/entities/bot.entity';
+import { Bot } from './entities/bot.entity';
 import type { MiniAppRequest } from '../miniapp/auth/miniapp-auth.guard';
 import type { Request } from 'express';
 

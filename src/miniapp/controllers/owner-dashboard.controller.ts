@@ -1,7 +1,7 @@
 import { Controller, Get, Param, Query, Req, UseGuards, ParseIntPipe, DefaultValuePipe, UseInterceptors } from '@nestjs/common';
 import type { Request } from 'express';
 import { MiniAppAuthGuard } from '../auth/miniapp-auth.guard';
-import { BotOwnershipGuard } from '../../ownership/bot-ownership.guard';
+import { BotOwnershipGuard } from '../../bot/bot-ownership.guard';
 import { DashboardService } from '../services/dashboard.service';
 import { OwnerViewService } from '../services/owner-view.service';
 

@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { BotController } from './bot.controller';
 import { BotService } from './bot.service';
+import { BotOwnershipGuard } from './bot-ownership.guard';
 import { TelegramModule } from '../telegram/telegram.module';
 import { CustomerModule } from '../customer/customer.module';
 import { OwnershipModule } from '../ownership/ownership.module';
@@ -22,7 +23,7 @@ import { Booking } from '../templates/booking/entities/booking.entity';
     TypeOrmModule.forFeature([Bot, UserState, ProcessedUpdate, Lead, AnalyticsEvent, Booking]),
   ],
   controllers: [BotController],
-  providers: [BotService],
-  exports: [BotService],
+  providers: [BotService, BotOwnershipGuard],
+  exports: [BotService, BotOwnershipGuard],
 })
 export class BotModule {}
