@@ -3,6 +3,7 @@ import { BotService } from '../../bot/bot.service';
 import { CustomerService } from '../../customer/customer.service';
 import { OwnerService } from '../../owner/owner.service';
 import { AnalyticsService } from '../../analytics/analytics.service';
+import { BookingQueryService } from '../../templates/booking/booking-query.service';
 
 /**
  * DashboardService — aggregates data for Mini App operational views.
@@ -12,6 +13,10 @@ import { AnalyticsService } from '../../analytics/analytics.service';
  * It does NOT contain business logic, runtime logic, or template logic.
  *
  * It is the data aggregation layer for the Mini App.
+ *
+ * TEMPLATE ISOLATION:
+ * Template-specific counts come from query services (BookingQueryService),
+ * NOT from BotService. BotService must remain template-agnostic.
  */
 @Injectable()
 export class DashboardService {
@@ -22,6 +27,7 @@ export class DashboardService {
     private readonly botService: BotService,
     private readonly customerService: CustomerService,
     private readonly analyticsService: AnalyticsService,
+    private readonly bookingQueryService: BookingQueryService,
   ) {}
 
   /**
@@ -74,11 +80,13 @@ export class DashboardService {
     // Single query: all customer counts for all bots
     const customerCountsByBot = await this.customerService.countByStatusForBots(botIds);
 
-    // Single query: all lead counts for all bots (template-specific interactions)
+    // Single query: all lead counts for all bots (template-specific — will move to LeadQueryService)
     const leadCountsByBot = await this.botService.countLeadsByBotIds(botIds);
 
     // Single query: all booking counts for all bots (template-specific interactions)
-    const bookingCountsByBot = await this.botService.countBookingsByBotIds(botIds);
+    // NOTE: Uses BookingQueryService directly, NOT BotService.
+    // BotService must remain template-agnostic.
+    const bookingCountsByBot = await this.bookingQueryService.countBookingsByBotIds(botIds);
 
     let totalCustomers = 0;
     for (const botCounts of Object.values(customerCountsByBot)) {
@@ -102,16 +110,25 @@ export class DashboardService {
 
   /**
    * Get stats for a specific bot.
+   *
+   * TEMPLATE ISOLATION:
+   * Template-specific counts come from query services, NOT BotService.
+   * BotService must remain template-agnostic.
    */
   async getBotStats(botId: string) {
     const overview = await this.botService.getBotOverview(botId);
     const statusCounts = await this.customerService.countByStatus(botId);
     const customerCount = Object.values(statusCounts).reduce((a, b) => a + b, 0);
 
+    // Template-specific counts from query services
+    const bookingCounts = await this.bookingQueryService.countBookingsByBotIds([botId]);
+    const bookingCount = bookingCounts[botId] || 0;
+
     return {
       ...overview,
       customerCount,
       customersByStatus: statusCounts,
+      bookingCount,
     };
   }
 

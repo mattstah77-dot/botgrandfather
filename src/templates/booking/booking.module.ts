@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { BookingService } from './booking.service';
+import { BookingRuntimeService } from './booking-runtime.service';
+import { BookingQueryService } from './booking-query.service';
 import { Booking } from './entities/booking.entity';
 import { UserState } from '../../bot/entities/user-state.entity';
 import { TelegramModule } from '../../telegram/telegram.module';
@@ -13,6 +14,10 @@ import { AnalyticsModule } from '../../analytics/analytics.module';
  * ARCHITECTURAL PRINCIPLE:
  * This module is self-contained. It imports only universal platform modules.
  * No cross-template imports. No operational layer imports.
+ *
+ * NOTE: Runtime and Query services are separated.
+ * - BookingRuntimeService: runtime conversation flow (used by TemplateFactory)
+ * - BookingQueryService: operational data access (used by MiniappModule)
  */
 @Module({
   imports: [
@@ -21,7 +26,7 @@ import { AnalyticsModule } from '../../analytics/analytics.module';
     CustomerModule,
     AnalyticsModule,
   ],
-  providers: [BookingService],
-  exports: [BookingService],
+  providers: [BookingRuntimeService, BookingQueryService],
+  exports: [BookingRuntimeService, BookingQueryService],
 })
 export class BookingModule {}

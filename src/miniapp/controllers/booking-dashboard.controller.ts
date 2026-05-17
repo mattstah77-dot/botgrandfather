@@ -9,14 +9,14 @@ import {
 } from '@nestjs/common';
 import { MiniAppAuthGuard } from '../auth/miniapp-auth.guard';
 import { BotOwnershipGuard } from '../../ownership/bot-ownership.guard';
-import { BookingService } from '../../templates/booking/booking.service';
+import { BookingQueryService } from '../../templates/booking/booking-query.service';
 
 /**
  * Booking Dashboard Controller — bot-specific booking operational endpoints.
  *
  * ARCHITECTURAL PRINCIPLE:
  * These endpoints serve booking operational data.
- * They are template-agnostic in structure — the same pattern works for all templates.
+ * They use BookingQueryService (NOT runtime service) — read-only operational layer.
  *
  * SECURITY:
  * All bot-scoped endpoints enforce ownership via BotOwnershipGuard.
@@ -25,7 +25,7 @@ import { BookingService } from '../../templates/booking/booking.service';
 @Controller('miniapp/bots')
 @UseGuards(MiniAppAuthGuard, BotOwnershipGuard)
 export class BookingDashboardController {
-  constructor(private readonly bookingService: BookingService) {}
+  constructor(private readonly bookingQueryService: BookingQueryService) {}
 
   /**
    * GET /miniapp/bots/:id/bookings
@@ -38,7 +38,7 @@ export class BookingDashboardController {
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
   ) {
-    return this.bookingService.getBotBookings(botId, page, limit);
+    return this.bookingQueryService.getBotBookings(botId, page, limit);
   }
 
   /**
@@ -55,7 +55,7 @@ export class BookingDashboardController {
   ) {
     // TODO: Implement calendar aggregation query
     // For now, return all bookings in date range
-    const bookings = await this.bookingService.getBotBookings(botId, 1, 100);
+    const bookings = await this.bookingQueryService.getBotBookings(botId, 1, 100);
     return bookings;
   }
 }

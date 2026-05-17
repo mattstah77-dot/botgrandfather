@@ -1,17 +1,17 @@
 import { Logger } from '@nestjs/common';
 import { TemplateContext, TemplateHandler } from '../template.interface';
-import { BookingService } from './booking.service';
+import { BookingRuntimeService } from './booking-runtime.service';
 import { TelegramService } from '../../telegram/telegram.service';
 
 /**
- * Booking Handler — THIN. Only routes updates to service methods.
- * ALL business logic lives in BookingService.
+ * Booking Handler — THIN. Only routes updates to runtime service methods.
+ * ALL business logic lives in BookingRuntimeService.
  */
 export class BookingHandler implements TemplateHandler {
   private readonly logger = new Logger(BookingHandler.name);
 
   constructor(
-    private readonly service: BookingService,
+    private readonly service: BookingRuntimeService,
     private readonly telegramService: TelegramService,
   ) {}
 
