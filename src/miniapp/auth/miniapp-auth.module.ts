@@ -1,4 +1,4 @@
-import { Module, forwardRef } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { TelegramInitDataService } from './telegram-init-data.service';
 import { MiniAppAuthGuard } from './miniapp-auth.guard';
 import { OwnerModule } from '../../owner/owner.module';
@@ -13,11 +13,13 @@ import { OwnerModule } from '../../owner/owner.module';
  * Both BotModule (for BotController guards) and MiniappModule
  * import this module to access Telegram initData validation.
  *
- * NOTE: Uses forwardRef to break circular dependency:
- * OwnerModule → BotModule → MiniAppAuthModule → OwnerModule
+ * CYCLE ELIMINATED:
+ * Previously: OwnerModule → BotModule → MiniAppAuthModule → OwnerModule
+ * Now: OwnerModule has no BotModule dependency.
+ * forwardRef() removed.
  */
 @Module({
-  imports: [forwardRef(() => OwnerModule)],
+  imports: [OwnerModule],
   providers: [TelegramInitDataService, MiniAppAuthGuard],
   exports: [TelegramInitDataService, MiniAppAuthGuard],
 })
