@@ -33,6 +33,6 @@ import { BookingQueryService } from './booking/booking-query.service';
     BookingRuntimeService,
     BookingQueryService,
   ],
-  exports: [TemplateFactory, LeadFunnelService, LeadFunnelQueryService, BookingQueryService],
+  exports: [TemplateFactory, LeadFunnelQueryService, BookingQueryService],
 })
 export class TemplateModule {}
