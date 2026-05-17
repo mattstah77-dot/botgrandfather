@@ -17,7 +17,7 @@ import { Lead } from './entities/lead.entity';
     CustomerModule,
     OwnershipModule,
     MiniAppAuthModule,
-    TypeOrmModule.forFeature([Bot, UserState, ProcessedUpdate, Lead, AnalyticsEvent]),
+    TypeOrmModule.forFeature([Bot, UserState, ProcessedUpdate, AnalyticsEvent]),
   ],
   controllers: [BotController],
   providers: [BotService],

@@ -55,16 +55,6 @@ export class BotController {
     await this.botService.deleteBot(id);
   }
 
-  @Get(':id/leads')
-  @UseGuards(MiniAppAuthGuard, BotOwnershipGuard)
-  async getBotLeads(
-    @Param('id') id: string,
-    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
-    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
-  ) {
-    return this.botService.getBotLeads(id, page, limit);
-  }
-
   /**
    * Universal Customer API — reusable across ALL templates.
    */

@@ -4,6 +4,7 @@ import { MiniAppAuthGuard } from '../auth/miniapp-auth.guard';
 import { BotOwnershipGuard } from '../../ownership/bot-ownership.guard';
 import { DashboardService } from '../services/dashboard.service';
 import { OwnerViewService } from '../services/owner-view.service';
+import { LeadFunnelQueryService } from '../../templates/lead-funnel/lead-funnel-query.service';
 
 /**
  * Owner Dashboard Controller — bot-specific operational endpoints.
@@ -23,6 +24,7 @@ export class OwnerDashboardController {
   constructor(
     private readonly dashboardService: DashboardService,
     private readonly ownerViewService: OwnerViewService,
+    private readonly leadFunnelQueryService: LeadFunnelQueryService,
   ) {}
 
   /**
@@ -84,6 +86,21 @@ export class OwnerDashboardController {
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
   ) {
     return this.dashboardService.getBotCustomers(botId, page, limit);
+  }
+
+  /**
+   * GET /miniapp/bots/:id/leads
+   *
+   * Lead list for a bot (lead-funnel template).
+   * Template-specific data served via query service.
+   */
+  @Get(':id/leads')
+  async getBotLeads(
+    @Param('id') botId: string,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
+  ) {
+    return this.leadFunnelQueryService.getBotLeads(botId, page, limit);
   }
 
   /**

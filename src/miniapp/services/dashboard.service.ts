@@ -4,6 +4,7 @@ import { CustomerService } from '../../customer/customer.service';
 import { OwnerService } from '../../owner/owner.service';
 import { AnalyticsService } from '../../analytics/analytics.service';
 import { BookingQueryService } from '../../templates/booking/booking-query.service';
+import { LeadFunnelQueryService } from '../../templates/lead-funnel/lead-funnel-query.service';
 
 /**
  * DashboardService — aggregates data for Mini App operational views.
@@ -28,6 +29,7 @@ export class DashboardService {
     private readonly customerService: CustomerService,
     private readonly analyticsService: AnalyticsService,
     private readonly bookingQueryService: BookingQueryService,
+    private readonly leadFunnelQueryService: LeadFunnelQueryService,
   ) {}
 
   /**
@@ -80,8 +82,10 @@ export class DashboardService {
     // Single query: all customer counts for all bots
     const customerCountsByBot = await this.customerService.countByStatusForBots(botIds);
 
-    // Single query: all lead counts for all bots (template-specific — will move to LeadQueryService)
-    const leadCountsByBot = await this.botService.countLeadsByBotIds(botIds);
+    // Single query: all lead counts for all bots (template-specific)
+    // NOTE: Uses LeadFunnelQueryService directly, NOT BotService.
+    // BotService must remain template-agnostic.
+    const leadCountsByBot = await this.leadFunnelQueryService.countLeadsByBotIds(botIds);
 
     // Single query: all booking counts for all bots (template-specific interactions)
     // NOTE: Uses BookingQueryService directly, NOT BotService.
@@ -124,10 +128,14 @@ export class DashboardService {
     const bookingCounts = await this.bookingQueryService.countBookingsByBotIds([botId]);
     const bookingCount = bookingCounts[botId] || 0;
 
+    const leadCounts = await this.leadFunnelQueryService.countLeadsByBotIds([botId]);
+    const leadCount = leadCounts[botId] || 0;
+
     return {
       ...overview,
       customerCount,
       customersByStatus: statusCounts,
+      leadCount,
       bookingCount,
     };
   }
