@@ -128,6 +128,7 @@ export class BotService {
       id: bot.id,
       template: bot.template,
       botUsername: botInfo.username,
+      botLink: `https://t.me/${botInfo.username}`,
       webhookUrl,
     };
   }

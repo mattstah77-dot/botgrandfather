@@ -17,6 +17,7 @@ import { VALID_TEMPLATE_NAMES } from '../templates/common/template.registry';
 export class PlatformBotService implements OnModuleInit {
   private readonly logger = new Logger(PlatformBotService.name);
   private platformBotId: string | null = null;
+  private platformBotUsername: string | null = null;
 
   constructor(
     @InjectRepository(Bot)
@@ -40,6 +41,7 @@ export class PlatformBotService implements OnModuleInit {
     try {
       // Validate the platform bot token with Telegram
       const botInfo = await this.telegramService.validateToken(PLATFORM_BOT_TOKEN);
+      this.platformBotUsername = botInfo.username;
       this.logger.log(`BotGrandFather token valid: @${botInfo.username}`);
 
       // Find or create the platform bot DB record
@@ -107,6 +109,7 @@ export class PlatformBotService implements OnModuleInit {
         ],
         [
           { text: '🎯 Lead Funnel', callback_data: 'template:lead-funnel' },
+          { text: '📅 Booking', callback_data: 'template:booking' },
         ],
       ],
     };
@@ -123,10 +126,42 @@ export class PlatformBotService implements OnModuleInit {
 
   /**
    * Reply with success after bot connection.
+   * Shows generated links for bot, owner dashboard, and customer mini app.
    */
-  async replySuccess(chatId: number, botUsername: string, template: string): Promise<void> {
-    const text = `✅ Bot @${botUsername} connected successfully!\n\nTemplate: ${template}\n\nYour bot is now active and ready to use.`;
-    await this.telegramService.sendMessage(PLATFORM_BOT_TOKEN, chatId, text);
+  async replySuccess(
+    chatId: number,
+    result: {
+      id: string;
+      template: string;
+      botUsername: string;
+      botLink: string;
+      webhookUrl: string;
+    },
+  ): Promise<void> {
+    const { botUsername, botLink, template } = result;
+
+    const lines: string[] = [
+      `✅ Bot @${botUsername} connected successfully!`,
+      '',
+      `Template: ${template}`,
+      '',
+      `🤖 Bot: ${botLink}`,
+    ];
+
+    // Owner dashboard link — platform bot's Mini App
+    if (this.platformBotUsername) {
+      const ownerDashboardUrl = `https://t.me/${this.platformBotUsername}/app`;
+      lines.push(`📊 Dashboard: ${ownerDashboardUrl}`);
+    }
+
+    // Customer Mini App link — deep link into the child bot with startapp param
+    // Template-specific: booking uses ?startapp=booking
+    const startAppParam = template === 'booking' ? 'booking' : 'start';
+    lines.push(`👥 Customer App: ${botLink}?startapp=${startAppParam}`);
+
+    lines.push('', 'Your bot is now active and ready to use.');
+
+    await this.telegramService.sendMessage(PLATFORM_BOT_TOKEN, chatId, lines.join('\n'));
   }
 
   /**
@@ -271,7 +306,7 @@ export class PlatformBotService implements OnModuleInit {
         config,
       }, ownerId);
 
-      await this.replySuccess(chatId, result.botUsername, selectedTemplate);
+      await this.replySuccess(chatId, result);
       await this.resetUserState(userId);
 
       this.logger.log(
