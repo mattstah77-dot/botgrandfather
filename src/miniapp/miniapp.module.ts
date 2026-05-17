@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { MiniappController } from './controllers/miniapp.controller';
 import { OwnerDashboardController } from './controllers/owner-dashboard.controller';
 import { BookingDashboardController } from './controllers/booking-dashboard.controller';
@@ -8,10 +9,10 @@ import { NavigationService } from './services/navigation.service';
 import { OwnerViewService } from './services/owner-view.service';
 import { OwnerModule } from '../owner/owner.module';
 import { OwnershipModule } from '../ownership/ownership.module';
-import { BotModule } from '../bot/bot.module';
 import { CustomerModule } from '../customer/customer.module';
 import { AnalyticsModule } from '../analytics/analytics.module';
 import { TemplateModule } from '../templates/template.module';
+import { Bot } from '../bot/entities/bot.entity';
 
 /**
  * Mini App Module — operational control center for BotGrandFather platform.
@@ -30,13 +31,26 @@ import { TemplateModule } from '../templates/template.module';
  * - Services: Data aggregation, view composition, navigation
  * - Auth: Telegram initData validation + guard (via MiniAppAuthModule)
  *
+ * DI NOTE:
+ * TypeOrmModule.forFeature([Bot]) is required for BotOwnershipGuard
+ * used by controllers in this module. This is repository visibility,
+ * NOT domain ownership. BotModule is NOT imported to avoid coupling.
+ *
  * NOT:
  * - Runtime engine
  * - Template-specific hardcoded UI
  * - Monolithic dashboard
  */
 @Module({
-  imports: [OwnerModule, BotModule, CustomerModule, AnalyticsModule, OwnershipModule, TemplateModule, MiniAppAuthModule],
+  imports: [
+    TypeOrmModule.forFeature([Bot]),
+    OwnerModule,
+    CustomerModule,
+    AnalyticsModule,
+    OwnershipModule,
+    TemplateModule,
+    MiniAppAuthModule,
+  ],
   controllers: [MiniappController, OwnerDashboardController, BookingDashboardController],
   providers: [
     DashboardService,
