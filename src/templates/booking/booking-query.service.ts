@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Booking } from './entities/booking.entity';
+import { Bot } from '../../bot/entities/bot.entity';
 
 /**
  * BookingQueryService — operational data access for the booking template.
@@ -21,12 +22,15 @@ import { Booking } from './entities/booking.entity';
  * - BookingDashboardController (Mini App)
  * - DashboardService (owner stats aggregation)
  * - BookingRuntimeService (slot availability checks)
+ * - CustomerBookingService (customer Mini App)
  */
 @Injectable()
 export class BookingQueryService {
   constructor(
     @InjectRepository(Booking)
     private readonly bookingRepository: Repository<Booking>,
+    @InjectRepository(Bot)
+    private readonly botRepository: Repository<Bot>,
   ) {}
 
   /**
@@ -89,5 +93,72 @@ export class BookingQueryService {
     }
 
     return counts;
+  }
+
+  /**
+   * Get available time slots for a specific date.
+   *
+   * Reads bot config (working hours, slot duration) and subtracts booked slots.
+   * Pure query-layer logic — no runtime state, no Telegram interaction.
+   *
+   * Returns array of available slot strings (e.g., ["09:00", "09:30", ...]).
+   */
+  async getAvailableSlots(botId: string, date: string): Promise<string[]> {
+    // Get bot config
+    const bot = await this.botRepository.findOne({
+      where: { id: botId },
+      select: ['config'],
+    });
+
+    if (!bot) {
+      return [];
+    }
+
+    const config = bot.config || {};
+    const workingHours = config.workingHours as Record<string, { open: string; close: string }> | undefined;
+    const slotDuration = (config.slotDuration as number) || 30; // minutes
+
+    if (!workingHours) {
+      return [];
+    }
+
+    // Determine day of week
+    const dayOfWeek = new Date(date).toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+    const dayConfig = workingHours[dayOfWeek];
+
+    if (!dayConfig || !dayConfig.open || !dayConfig.close) {
+      return []; // Closed on this day
+    }
+
+    // Generate all possible slots
+    const slots = this.generateTimeSlots(dayConfig.open, dayConfig.close, slotDuration);
+
+    // Get booked slots for this date
+    const bookedSlots = await this.getBookedSlots(botId, date);
+    const bookedSet = new Set(bookedSlots.map((b) => b.timeSlot));
+
+    // Filter out booked slots
+    return slots.filter((slot) => !bookedSet.has(slot));
+  }
+
+  /**
+   * Generate time slots between open and close times.
+   */
+  private generateTimeSlots(open: string, close: string, durationMinutes: number): string[] {
+    const slots: string[] = [];
+    const [openHour, openMin] = open.split(':').map(Number);
+    const [closeHour, closeMin] = close.split(':').map(Number);
+
+    let current = openHour * 60 + openMin;
+    const end = closeHour * 60 + closeMin;
+
+    while (current + durationMinutes <= end) {
+      const h = Math.floor(current / 60);
+      const m = current % 60;
+      slots.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
+      current += durationMinutes;
+    }
+
+    return slots;
   }
 }

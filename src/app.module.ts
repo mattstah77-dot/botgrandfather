@@ -11,6 +11,7 @@ import { AdminModule } from './admin/admin.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { BillingModule } from './billing/billing.module';
 import { MiniappModule } from './miniapp/miniapp.module';
+import { CustomerMiniappModule } from './customer-miniapp/customer-miniapp.module';
 import { RuntimeModule } from './runtime/runtime.module';
 import { OwnerModulesModule } from './owner-modules/owner-modules.module';
 import { CustomerModule } from './customer/customer.module';
@@ -52,6 +53,7 @@ import { AnalyticsEvent } from './analytics/entities/analytics-event.entity';
     AnalyticsModule,
     BillingModule,
     MiniappModule,
+    CustomerMiniappModule,
     CustomerModule,
     LifecycleModule,
   ],
