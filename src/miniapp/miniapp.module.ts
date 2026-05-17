@@ -9,6 +9,7 @@ import { NavigationService } from './services/navigation.service';
 import { OwnerViewService } from './services/owner-view.service';
 import { OwnerModule } from '../owner/owner.module';
 import { OwnershipModule } from '../ownership/ownership.module';
+import { BotModule } from '../bot/bot.module';
 import { CustomerModule } from '../customer/customer.module';
 import { AnalyticsModule } from '../analytics/analytics.module';
 import { TemplateModule } from '../templates/template.module';
@@ -31,10 +32,13 @@ import { Bot } from '../bot/entities/bot.entity';
  * - Services: Data aggregation, view composition, navigation
  * - Auth: Telegram initData validation + guard (via MiniAppAuthModule)
  *
- * DI NOTE:
- * TypeOrmModule.forFeature([Bot]) is required for BotOwnershipGuard
- * used by controllers in this module. This is repository visibility,
- * NOT domain ownership. BotModule is NOT imported to avoid coupling.
+ * DI NOTES:
+ * - TypeOrmModule.forFeature([Bot]): required for BotOwnershipGuard
+ *   repository visibility in this module's DI context.
+ * - BotModule: imported for DashboardService (bot overview, operational
+ *   aggregation). SAFE because BotService is template-agnostic after
+ *   stabilization. Does NOT create cycles — OwnerModule no longer
+ *   imports BotModule.
  *
  * NOT:
  * - Runtime engine
@@ -44,6 +48,7 @@ import { Bot } from '../bot/entities/bot.entity';
 @Module({
   imports: [
     TypeOrmModule.forFeature([Bot]),
+    BotModule,
     OwnerModule,
     CustomerModule,
     AnalyticsModule,
