@@ -7,7 +7,7 @@
   "license": "UNLICENSED",
   "scripts": {
     "build": "npm run build:frontend && tsc -p tsconfig.build.json",
-    "build:frontend": "cd frontend/owner-miniapp && npm install && npm run build",
+    "build:frontend": "cd frontend/owner-miniapp && npm install --include=dev && npm run build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
