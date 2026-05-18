@@ -8,14 +8,17 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { createHmac } from 'crypto';
-import { Request } from 'express';
 import { Bot } from '../../bot/entities/bot.entity';
 import { CustomerSession } from './customer-session.interface';
 
 /**
- * Extended Express Request type with CustomerSession.
+ * Minimal request interface for CustomerAuthGuard.
+ * Does NOT import from express to avoid @types/express dependency in production builds.
  */
-export interface CustomerRequest extends Request {
+export interface CustomerRequest {
+  params: { botId?: string | string[] };
+  headers: Record<string, string | string[] | undefined>;
+  query: Record<string, string | string[] | undefined>;
   customerSession?: CustomerSession;
 }
 
@@ -49,7 +52,7 @@ export class CustomerAuthGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest<CustomerRequest>();
+    const request = context.switchToHttp().getRequest() as CustomerRequest;
 
     // Extract botId from route params
     const botId = Array.isArray(request.params?.botId)
