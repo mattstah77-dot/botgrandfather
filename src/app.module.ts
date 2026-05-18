@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 import { BotModule } from './bot/bot.module';
 import { WebhookModule } from './webhook/webhook.module';
 import { TemplateModule } from './templates/template.module';
@@ -56,6 +58,12 @@ import { AnalyticsEvent } from './analytics/entities/analytics-event.entity';
     CustomerMiniappModule,
     CustomerModule,
     LifecycleModule,
+    // Serve owner MiniApp frontend statically at /app
+    // MUST be registered AFTER API modules so API routes take precedence
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'public', 'app'),
+      serveRoot: '/app',
+    }),
   ],
   controllers: [AppController],
   providers: [AppService],
