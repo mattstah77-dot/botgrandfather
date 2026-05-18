@@ -21,10 +21,10 @@ export class Bot {
   @Column({ unique: true })
   webhookSecret: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   username: string | null;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   ownerId: string | null;
 
   @ManyToOne(() => Owner, (owner) => owner.bots, { nullable: true })
