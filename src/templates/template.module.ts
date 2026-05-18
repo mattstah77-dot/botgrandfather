@@ -5,6 +5,7 @@ import { TelegramModule } from '../telegram/telegram.module';
 import { CustomerModule } from '../customer/customer.module';
 import { AnalyticsModule } from '../analytics/analytics.module';
 import { UserState } from '../bot/entities/user-state.entity';
+import { Bot } from '../bot/entities/bot.entity';
 import { Lead } from '../bot/entities/lead.entity';
 import { Booking } from './booking/entities/booking.entity';
 import { LeadFunnelService } from './lead-funnel/lead-funnel.service';
@@ -21,7 +22,7 @@ import { BookingQueryService } from './booking/booking-query.service';
     TelegramModule,
     CustomerModule,
     AnalyticsModule,
-    TypeOrmModule.forFeature([UserState, Lead, Booking]),
+    TypeOrmModule.forFeature([UserState, Bot, Lead, Booking]),
   ],
   providers: [
     TemplateFactory,
