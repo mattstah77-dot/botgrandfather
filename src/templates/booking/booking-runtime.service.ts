@@ -10,6 +10,7 @@ import { AnalyticsService } from '../../analytics/analytics.service';
 import { Booking } from './entities/booking.entity';
 import { BookingConfig, BookingProgress } from './booking.types';
 import { BookingQueryService } from './booking-query.service';
+import { WEBHOOK_HOST } from '../../config/env.config';
 
 /**
  * BookingRuntimeService — runtime conversation flow for the booking template.
@@ -173,16 +174,29 @@ export class BookingRuntimeService implements TemplateService {
     lines.push('');
     lines.push('Please select a service:');
 
-    const buttons = services.map((service) => ({
+    const serviceButtons = services.map((service) => ({
       text: `${service.name}${service.price ? ` — $${service.price}` : ''}`,
       callback_data: `booking:service:${service.id}`,
     }));
+
+    // Build inline keyboard rows: services first, then WebApp CTA
+    const keyboardRows: { text: string; callback_data?: string; web_app?: { url: string } }[][] = [
+      serviceButtons,
+    ];
+
+    // Add WebApp button if botUsername is available
+    if (context.botUsername) {
+      const webAppUrl = `${WEBHOOK_HOST}/customer?botId=${context.botId}`;
+      keyboardRows.push([
+        { text: '📅 Open Booking App', web_app: { url: webAppUrl } },
+      ]);
+    }
 
     await this.telegramService.sendMessage(
       context.botToken,
       context.chatId,
       lines.join('\n'),
-      { inline_keyboard: [buttons] },
+      { inline_keyboard: keyboardRows },
     );
   }
 

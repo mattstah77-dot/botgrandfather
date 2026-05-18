@@ -44,6 +44,7 @@ export interface BotUpdate {
 export interface TemplateContext {
   botId: string;
   botToken: string;
+  botUsername?: string;
   botConfig: Record<string, any>;
   userId: number;
   chatId: number;

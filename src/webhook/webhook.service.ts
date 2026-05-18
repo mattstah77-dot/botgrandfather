@@ -43,7 +43,7 @@ export class WebhookService {
       }
 
       // Build context — supports both messages and callback queries
-      const context = this.buildContext(bot.id, bot.token, bot.config, update);
+      const context = this.buildContext(bot.id, bot.token, bot.username || undefined, bot.config, update);
 
       if (!context) {
         this.logger.debug('No processable content in update');
@@ -73,6 +73,7 @@ export class WebhookService {
   private buildContext(
     botId: string,
     botToken: string,
+    botUsername: string | undefined,
     botConfig: Record<string, any>,
     update: any,
   ): any | null {
@@ -84,6 +85,7 @@ export class WebhookService {
       return {
         botId,
         botToken,
+        botUsername,
         botConfig,
         userId: from.id,
         chatId: cq.message?.chat?.id,
@@ -105,6 +107,7 @@ export class WebhookService {
       return {
         botId,
         botToken,
+        botUsername,
         botConfig,
         userId: from.id || message.chat.id,
         chatId: message.chat.id,

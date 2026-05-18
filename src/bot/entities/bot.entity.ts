@@ -22,6 +22,9 @@ export class Bot {
   webhookSecret: string;
 
   @Column({ nullable: true })
+  username: string | null;
+
+  @Column({ nullable: true })
   ownerId: string | null;
 
   @ManyToOne(() => Owner, (owner) => owner.bots, { nullable: true })

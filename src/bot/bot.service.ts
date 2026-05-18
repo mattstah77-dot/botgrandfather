@@ -105,6 +105,7 @@ export class BotService {
         template: dto.template,
         config: finalConfig,
         webhookSecret,
+        username: botInfo.username || null,
         ownerId: ownerId || null,
       });
 
@@ -163,7 +164,7 @@ export class BotService {
   async verifyWebhook(botId: string, secret: string): Promise<Bot | null> {
     const bot = await this.botRepository.findOne({
       where: { id: botId, webhookSecret: secret },
-      select: ['id', 'token', 'template', 'config', 'webhookSecret', 'createdAt', 'updatedAt'],
+      select: ['id', 'token', 'template', 'config', 'webhookSecret', 'username', 'createdAt', 'updatedAt'],
     });
     return bot;
   }
