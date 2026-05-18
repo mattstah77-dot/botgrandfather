@@ -13,6 +13,7 @@ export const bookingOwnerModule: OwnerModuleDefinition = {
   displayName: 'Booking',
   usesCustomerLayer: true,
   createsLeads: false,
+  hasCustomerMiniApp: true,
   navigation: [
     {
       id: 'bookings',

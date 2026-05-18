@@ -59,4 +59,15 @@ export interface OwnerModuleDefinition {
 
   /** Whether this template creates leads (template-specific data) */
   createsLeads: boolean;
+
+  /**
+   * Whether this template provides a customer-facing Mini App.
+   *
+   * TRUE:  template has a customer Mini App (e.g., booking, ecommerce)
+   * FALSE: template is chat-only or owner-only (e.g., lead-funnel, FAQ)
+   *
+   * Used by owner dashboard to show "Customer Mini App Available" indicator.
+   * No complex capability engine — just a single boolean flag.
+   */
+  hasCustomerMiniApp?: boolean;
 }
