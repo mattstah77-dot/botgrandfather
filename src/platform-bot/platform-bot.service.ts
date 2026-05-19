@@ -111,6 +111,12 @@ export class PlatformBotService implements OnModuleInit {
           { text: '🎯 Lead Funnel', callback_data: 'template:lead-funnel' },
           { text: '📅 Booking', callback_data: 'template:booking' },
         ],
+        [
+          {
+            text: '📊 Dashboard',
+            web_app: { url: `${WEBHOOK_HOST}/app` },
+          },
+        ],
       ],
     };
     await this.telegramService.sendMessage(PLATFORM_BOT_TOKEN, chatId, text, keyboard);
@@ -148,17 +154,16 @@ export class PlatformBotService implements OnModuleInit {
       `🤖 Bot: ${botLink}`,
     ];
 
-    // Owner dashboard link — direct HTTPS URL (not Telegram deep link)
-    // This ensures the dashboard opens reliably without BotFather Mini App registration
-    const ownerDashboardUrl = `${WEBHOOK_HOST}/app`;
-    lines.push(`📊 Dashboard: ${ownerDashboardUrl}`);
-
-    // Customer Mini App link — deep link into the child bot with startapp param
-    // Template-specific: booking uses ?startapp=booking
-    const startAppParam = template === 'booking' ? 'booking' : 'start';
-    lines.push(`👥 Customer App: ${botLink}?startapp=${startAppParam}`);
+    // Customer Mini App optional URL — for BotFather menu button registration
+    // This is NOT the primary entry point; primary is inline keyboard web_app CTA in chat
+    const customerMiniAppUrl = `${WEBHOOK_HOST}/customer?botId=${result.id}`;
+    lines.push('');
+    lines.push('Optional — Customer Mini App URL');
+    lines.push('(for BotFather menu button registration):');
+    lines.push(customerMiniAppUrl);
 
     lines.push('', 'Your bot is now active and ready to use.');
+    lines.push('Open your Dashboard anytime from BotGrandFather.');
 
     await this.telegramService.sendMessage(PLATFORM_BOT_TOKEN, chatId, lines.join('\n'));
   }
