@@ -27,19 +27,33 @@ async function bootstrap() {
   });
 
   // Static serving + SPA fallback for Mini Apps
-  // Order matters: 1) static files, 2) SPA fallback for unmatched routes
+  // Order matters: API routes MUST be handled by NestJS, not static middleware
   const expressApp = app.getHttpAdapter().getInstance();
 
-  // Owner MiniApp: serve static files from /app/assets/*, /app/index.html
-  expressApp.use('/app', express.static(join(__dirname, '..', 'public', 'app')));
+  // Owner MiniApp: serve static files, but skip /app/api/* routes
+  expressApp.use('/app', (req, res, next) => {
+    if (req.path.startsWith('/api')) return next();
+    express.static(join(__dirname, '..', 'public', 'app'))(req, res, next);
+  });
 
-  // Customer MiniApp: serve static files from /customer/assets/*, /customer/index.html
-  expressApp.use('/customer', express.static(join(__dirname, '..', 'public', 'customer')));
+  // Customer MiniApp: serve static files, but skip /customer/bot/* API routes
+  expressApp.use('/customer', (req, res, next) => {
+    if (/^\/bot\//.test(req.path)) return next();
+    express.static(join(__dirname, '..', 'public', 'customer'))(req, res, next);
+  });
 
   // SPA fallback: for any unmatched /app/* route, serve index.html
-  // This enables React Router direct refresh on /app/bots/:id
-  expressApp.get('/app/*path', (req, res) => {
+  // Skip /app/api/* — these are API routes handled by NestJS controllers
+  expressApp.get('/app/*path', (req, res, next) => {
+    if (req.path.startsWith('/api')) return next();
     res.sendFile(join(__dirname, '..', 'public', 'app', 'index.html'));
+  });
+
+  // SPA fallback: for any unmatched /customer/* route, serve index.html
+  // Skip /customer/bot/* — these are API routes handled by NestJS controllers
+  expressApp.get('/customer/*path', (req, res, next) => {
+    if (req.path.startsWith('/bot/')) return next();
+    res.sendFile(join(__dirname, '..', 'public', 'customer', 'index.html'));
   });
 
   // SPA fallback: for /customer (with query params like ?botId=xxx)
