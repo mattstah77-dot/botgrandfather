@@ -16,8 +16,14 @@ async function bootstrap() {
     }),
   );
 
-  // Enable CORS for webhook requests
-  app.enableCors();
+  // Enable CORS for Mini App API requests
+  // Must allow X-Telegram-Init-Data header for auth to work
+  app.enableCors({
+    origin: true,
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'X-Telegram-Init-Data', 'Authorization'],
+    methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+  });
 
   // SPA fallback: serve index.html for any non-API route under /app
   // This enables direct refresh on /app/bots/:id/bookings etc.

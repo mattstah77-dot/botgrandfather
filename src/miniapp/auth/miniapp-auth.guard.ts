@@ -50,16 +50,17 @@ export class MiniAppAuthGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
+    const path = request.path;
 
     // Extract initData from header or query
-    // Telegram sends initData in the X-Telegram-Init-Data header
-    // or as query parameter
     const initData =
       (request.headers['x-telegram-init-data'] as string) ||
       (request.query.initData as string);
 
+    this.logger.log(`MiniApp auth: path=${path} initData present=${!!initData} header=${!!request.headers['x-telegram-init-data']}`);
+
     if (!initData || typeof initData !== 'string') {
-      this.logger.warn('Missing initData in request');
+      this.logger.warn(`Missing initData in request to ${path}`);
       throw new UnauthorizedException('Missing authentication');
     }
 

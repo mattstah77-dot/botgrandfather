@@ -7,7 +7,10 @@ export function setInitData(data: string) {
 }
 
 async function fetchJson(path: string, options?: RequestInit) {
-  const res = await fetch(`${API_BASE}${path}`, {
+  const url = `${API_BASE}${path}`;
+  console.log('[Customer API]', options?.method || 'GET', url, 'initData length:', initData.length);
+
+  const res = await fetch(url, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -15,8 +18,12 @@ async function fetchJson(path: string, options?: RequestInit) {
       ...options?.headers,
     },
   });
+
+  console.log('[Customer API] response', res.status, url);
+
   if (!res.ok) {
-    const text = await res.text().catch(() => 'Unknown error');
+    const text = await res.text().catch(() => 'no body');
+    console.error('[Customer API] error body:', text);
     throw new Error(`${res.status}: ${text}`);
   }
   return res.json();

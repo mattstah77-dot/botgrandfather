@@ -53,11 +53,20 @@ export class CustomerAuthGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest() as CustomerRequest;
+    const path = request.headers['x-request-path'] || 'unknown';
 
     // Extract botId from route params
     const botId = Array.isArray(request.params?.botId)
       ? request.params.botId[0]
       : request.params?.botId;
+
+    // Extract initData from header or query
+    const initData =
+      (request.headers['x-telegram-init-data'] as string) ||
+      (request.query.initData as string);
+
+    this.logger.log(`Customer auth: botId=${botId} initData present=${!!initData} header=${!!request.headers['x-telegram-init-data']}`);
+
     if (!botId) {
       this.logger.warn('Customer auth failed: no botId in route params');
       throw new UnauthorizedException('Bot ID required');
@@ -73,11 +82,6 @@ export class CustomerAuthGuard implements CanActivate {
       this.logger.warn(`Customer auth failed: bot not found: ${botId}`);
       throw new UnauthorizedException('Bot not found');
     }
-
-    // Extract initData from header or query
-    const initData =
-      (request.headers['x-telegram-init-data'] as string) ||
-      (request.query.initData as string);
 
     if (!initData || typeof initData !== 'string') {
       this.logger.warn('Customer auth failed: missing initData');

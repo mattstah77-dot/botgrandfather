@@ -8,6 +8,8 @@ export function setInitData(initData: string) {
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const url = `${API_BASE}${path}`;
+  console.log('[API]', options.method || 'GET', url, 'initData length:', initDataHeader.length);
+
   const res = await fetch(url, {
     ...options,
     headers: {
@@ -17,11 +19,15 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     },
   });
 
+  console.log('[API] response', res.status, url);
+
   if (!res.ok) {
+    const text = await res.text().catch(() => 'no body');
+    console.error('[API] error body:', text);
     if (res.status === 401) {
-      throw new Error('Unauthorized');
+      throw new Error('Unauthorized: ' + text);
     }
-    throw new Error(`API error: ${res.status}`);
+    throw new Error(`API error ${res.status}: ${text}`);
   }
 
   return res.json() as Promise<T>;

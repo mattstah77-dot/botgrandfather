@@ -43,12 +43,17 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
+    console.log('[TG] window.Telegram exists:', !!window.Telegram);
+    console.log('[TG] window.Telegram.WebApp exists:', !!tg);
+
     if (!tg) {
+      console.warn('[TG] Telegram WebApp not available — showing fallback');
       setIsTelegram(false);
       setReady(true);
       return;
     }
 
+    console.log('[TG] initData length:', tg.initData?.length || 0);
     tg.ready();
     tg.expand();
 

@@ -46,10 +46,16 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
+    console.log('[Customer TG] window.Telegram exists:', !!window.Telegram);
+    console.log('[Customer TG] WebApp exists:', !!tg);
+
     if (!tg) {
+      console.warn('[Customer TG] Telegram WebApp not available');
       setReady(true);
       return;
     }
+
+    console.log('[Customer TG] initData length:', tg.initData?.length || 0);
     tg.ready();
     tg.expand();
     const bg = tg.themeParams.bg_color || '#f5f5f5';
