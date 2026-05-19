@@ -27,42 +27,34 @@ async function bootstrap() {
   });
 
   // Static serving + SPA fallback for Mini Apps
-  // Order matters: API routes MUST be handled by NestJS, not static middleware
+  // Order: 1) NestJS API routes, 2) Static files, 3) SPA fallback
   const expressApp = app.getHttpAdapter().getInstance();
 
-  // Owner MiniApp: serve static files, but skip /app/api/* routes
+  // Owner MiniApp static files
+  // Note: /app/api/* exclusion needed because owner APIs still use /miniapp/*
+  // (not yet migrated to /api/owner/*)
   expressApp.use('/app', (req, res, next) => {
     if (req.path.startsWith('/api')) return next();
     express.static(join(__dirname, '..', 'public', 'app'))(req, res, next);
   });
 
-  // Customer MiniApp: serve static files, but skip /customer/bot/* API routes
-  expressApp.use('/customer', (req, res, next) => {
-    if (/^\/bot\//.test(req.path)) return next();
-    express.static(join(__dirname, '..', 'public', 'customer'))(req, res, next);
-  });
+  // Customer MiniApp static files
+  // NO exclusion needed - customer APIs now at /api/customer/* (outside SPA namespace)
+  expressApp.use('/customer', express.static(join(__dirname, '..', 'public', 'customer')));
 
-  // SPA fallback: for any unmatched /app/* route, serve index.html
-  // Skip /app/api/* — these are API routes handled by NestJS controllers
-  expressApp.get('/app/*path', (req, res, next) => {
-    if (req.path.startsWith('/api')) return next();
+  // SPA fallback for Owner MiniApp: serve index.html for unmatched routes
+  expressApp.get('/app/*path', (req, res) => {
     res.sendFile(join(__dirname, '..', 'public', 'app', 'index.html'));
   });
 
-  // SPA fallback: for any unmatched /customer/* route, serve index.html
-  // Skip /customer/bot/* — these are API routes handled by NestJS controllers
-  expressApp.get('/customer/*path', (req, res, next) => {
-    if (req.path.startsWith('/bot/')) return next();
-    res.sendFile(join(__dirname, '..', 'public', 'customer', 'index.html'));
-  });
-
-  // SPA fallback: for /customer (with query params like ?botId=xxx)
-  expressApp.get('/customer', (req, res) => {
-    res.sendFile(join(__dirname, '..', 'public', 'customer', 'index.html'));
-  });
-
-  // SPA fallback: for any unmatched /customer/* route, serve index.html
+  // SPA fallback for Customer MiniApp: serve index.html for unmatched routes
+  // NO exclusion needed - /api/customer/* is handled by NestJS before this
   expressApp.get('/customer/*path', (req, res) => {
+    res.sendFile(join(__dirname, '..', 'public', 'customer', 'index.html'));
+  });
+
+  // SPA fallback for /customer (with query params like ?botId=xxx)
+  expressApp.get('/customer', (req, res) => {
     res.sendFile(join(__dirname, '..', 'public', 'customer', 'index.html'));
   });
 

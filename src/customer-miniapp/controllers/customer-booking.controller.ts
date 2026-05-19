@@ -25,7 +25,7 @@ class CreateBookingDto {
 /**
  * CustomerBookingController — customer-facing booking API.
  *
- * Routes: /customer/bot/:botId/*
+ * Routes: /api/customer/bot/:botId/*
  *
  * AUTH:
  * - CustomerAuthGuard validates Telegram initData using the child bot's token.
@@ -41,13 +41,13 @@ class CreateBookingDto {
  * - These are runtime UX APIs, not operational CRUD.
  * - Auth uses child bot token, not platform bot token.
  */
-@Controller('customer/bot/:botId')
+@Controller('api/customer/bot/:botId')
 @UseGuards(CustomerAuthGuard)
 export class CustomerBookingController {
   constructor(private readonly customerBookingService: CustomerBookingService) {}
 
   /**
-   * GET /customer/bot/:botId/slots?date=YYYY-MM-DD
+   * GET /api/customer/bot/:botId/slots?date=YYYY-MM-DD
    *
    * Returns available time slots for the specified date.
    */
@@ -65,7 +65,7 @@ export class CustomerBookingController {
   }
 
   /**
-   * POST /customer/bot/:botId/bookings
+   * POST /api/customer/bot/:botId/bookings
    *
    * Creates a new booking from the customer Mini App.
    */
@@ -100,7 +100,7 @@ export class CustomerBookingController {
   }
 
   /**
-   * GET /customer/bot/:botId/bookings/:bookingId
+   * GET /api/customer/bot/:botId/bookings/:bookingId
    *
    * Returns a single booking (customer-scoped).
    */
