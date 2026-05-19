@@ -42,6 +42,11 @@ async function bootstrap() {
     res.sendFile(join(__dirname, '..', 'public', 'app', 'index.html'));
   });
 
+  // SPA fallback: for /customer (with query params like ?botId=xxx)
+  expressApp.get('/customer', (req, res) => {
+    res.sendFile(join(__dirname, '..', 'public', 'customer', 'index.html'));
+  });
+
   // SPA fallback: for any unmatched /customer/* route, serve index.html
   expressApp.get('/customer/*path', (req, res) => {
     res.sendFile(join(__dirname, '..', 'public', 'customer', 'index.html'));
