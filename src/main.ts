@@ -1,8 +1,9 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, Logger } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { PORT } from './config/env.config';
 import { join } from 'path';
+import * as express from 'express';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -25,20 +26,24 @@ async function bootstrap() {
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
   });
 
-  // SPA fallback: serve index.html for any non-API route under /app
-  // This enables direct refresh on /app/bots/:id/bookings etc.
+  // Static serving + SPA fallback for Mini Apps
+  // Order matters: 1) static files, 2) SPA fallback for unmatched routes
   const expressApp = app.getHttpAdapter().getInstance();
-  // SPA fallback: serve index.html for any non-API route under /app
-  // Named wildcard *path required for Express 5 / path-to-regexp v8
-  expressApp.get('/app/*path', (req, res, next) => {
-    if (req.path.startsWith('/app/api')) return next();
+
+  // Owner MiniApp: serve static files from /app/assets/*, /app/index.html
+  expressApp.use('/app', express.static(join(__dirname, '..', 'public', 'app')));
+
+  // Customer MiniApp: serve static files from /customer/assets/*, /customer/index.html
+  expressApp.use('/customer', express.static(join(__dirname, '..', 'public', 'customer')));
+
+  // SPA fallback: for any unmatched /app/* route, serve index.html
+  // This enables React Router direct refresh on /app/bots/:id
+  expressApp.get('/app/*path', (req, res) => {
     res.sendFile(join(__dirname, '..', 'public', 'app', 'index.html'));
   });
 
-  // SPA fallback for customer miniapp
-  // Customer API routes are /customer/bot/* — must NOT be intercepted
-  expressApp.get('/customer/*path', (req, res, next) => {
-    if (/^\/customer\/bot\//.test(req.path)) return next();
+  // SPA fallback: for any unmatched /customer/* route, serve index.html
+  expressApp.get('/customer/*path', (req, res) => {
     res.sendFile(join(__dirname, '..', 'public', 'customer', 'index.html'));
   });
 
