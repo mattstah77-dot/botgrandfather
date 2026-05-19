@@ -22,15 +22,16 @@ async function bootstrap() {
   // SPA fallback: serve index.html for any non-API route under /app
   // This enables direct refresh on /app/bots/:id/bookings etc.
   const expressApp = app.getHttpAdapter().getInstance();
-  expressApp.get('/app/*', (req, res, next) => {
-    // Don't intercept API routes (/app/api/* doesn't exist, but be safe)
+  // SPA fallback: serve index.html for any non-API route under /app
+  // Named wildcard *path required for Express 5 / path-to-regexp v8
+  expressApp.get('/app/*path', (req, res, next) => {
     if (req.path.startsWith('/app/api')) return next();
     res.sendFile(join(__dirname, '..', 'public', 'app', 'index.html'));
   });
 
   // SPA fallback for customer miniapp
   // Customer API routes are /customer/bot/* — must NOT be intercepted
-  expressApp.get('/customer/*', (req, res, next) => {
+  expressApp.get('/customer/*path', (req, res, next) => {
     if (/^\/customer\/bot\//.test(req.path)) return next();
     res.sendFile(join(__dirname, '..', 'public', 'customer', 'index.html'));
   });
