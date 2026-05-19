@@ -64,6 +64,11 @@ import { AnalyticsEvent } from './analytics/entities/analytics-event.entity';
       rootPath: join(__dirname, '..', 'public', 'app'),
       serveRoot: '/app',
     }),
+    // Serve customer MiniApp frontend statically at /customer
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'public', 'customer'),
+      serveRoot: '/customer',
+    }),
   ],
   controllers: [AppController],
   providers: [AppService],

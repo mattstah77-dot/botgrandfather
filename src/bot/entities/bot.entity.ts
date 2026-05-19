@@ -7,39 +7,39 @@ import { Owner } from '../../owner/entities/owner.entity';
 @Index(['template'])
 export class Bot {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @Column({ select: false }) // Never select token by default; explicit opt-in only
-  token: string;
+  token!: string;
 
   @Column()
-  template: string;
+  template!: string;
 
   @Column({ type: 'jsonb' })
-  config: Record<string, any>;
+  config!: Record<string, any>;
 
   @Column({ unique: true })
-  webhookSecret: string;
+  webhookSecret!: string;
 
   @Column({ type: 'varchar', nullable: true })
-  username: string | null;
+  username: string | null = null;
 
   @Column({ type: 'varchar', nullable: true })
-  ownerId: string | null;
+  ownerId: string | null = null;
 
   @ManyToOne(() => Owner, (owner) => owner.bots, { nullable: true })
   @JoinColumn({ name: 'ownerId' })
-  owner: Owner | null;
+  owner: Owner | null = null;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 
   @OneToMany(() => UserState, (userState) => userState.bot)
-  userStates: UserState[];
+  userStates!: UserState[];
 
   @OneToMany(() => ProcessedUpdate, (processedUpdate) => processedUpdate.bot)
-  processedUpdates: ProcessedUpdate[];
+  processedUpdates!: ProcessedUpdate[];
 }

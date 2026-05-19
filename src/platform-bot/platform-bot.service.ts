@@ -148,11 +148,10 @@ export class PlatformBotService implements OnModuleInit {
       `🤖 Bot: ${botLink}`,
     ];
 
-    // Owner dashboard link — platform bot's Mini App
-    if (this.platformBotUsername) {
-      const ownerDashboardUrl = `https://t.me/${this.platformBotUsername}/app`;
-      lines.push(`📊 Dashboard: ${ownerDashboardUrl}`);
-    }
+    // Owner dashboard link — direct HTTPS URL (not Telegram deep link)
+    // This ensures the dashboard opens reliably without BotFather Mini App registration
+    const ownerDashboardUrl = `${WEBHOOK_HOST}/app`;
+    lines.push(`📊 Dashboard: ${ownerDashboardUrl}`);
 
     // Customer Mini App link — deep link into the child bot with startapp param
     // Template-specific: booking uses ?startapp=booking
