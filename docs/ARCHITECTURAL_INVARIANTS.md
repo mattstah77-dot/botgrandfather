@@ -959,6 +959,145 @@ class NoCodeBuilder {
 
 **END OF ARCHITECTURAL INVARIANTS**
 
+---
+
+## APPENDIX A — EVENT PHILOSOPHY INVARIANTS
+
+### A.1 Platform Events Are Semantic Facts First
+
+> **Invariant A.1:** Platform events represent semantic facts about what happened. They are NOT orchestration mechanisms, commands, or workflow triggers.
+
+**GOOD:**
+```typescript
+// Event describes a fact
+await analytics.trackEvent(botId, 'booking.created', {
+  serviceId: 'consultation',
+  date: '2026-05-20',
+});
+```
+
+**BAD:**
+```typescript
+// Event is a command/orchestration
+await eventBus.emit('createBooking', { serviceId: 'consultation' });
+```
+
+### A.2 Synchronous Business Logic Remains Primary
+
+> **Invariant A.2:** Synchronous business logic is the primary execution path. Events are supplementary for analytics, observability, and lightweight reactions.
+
+**GOOD:**
+```typescript
+// Business logic is explicit and synchronous
+const booking = await bookingService.createBooking(params);
+await analytics.trackEvent(botId, 'booking.created', { bookingId: booking.id });
+```
+
+**BAD:**
+```typescript
+// Business logic hidden in event handlers
+await eventBus.emit('booking.createRequested', params);
+// Event handler creates booking asynchronously
+```
+
+### A.3 Events Support Analytics, Not Distributed Workflows
+
+> **Invariant A.3:** Events MAY support analytics aggregation and lightweight reactions. They MUST NOT become distributed workflow infrastructure.
+
+**GOOD:**
+```typescript
+// Event stored for analytics
+await analytics.trackEvent(botId, 'customer.converted', { userId: 123 });
+
+// Later: analytics dashboard aggregates
+const stats = await analytics.getBotStats(botId);
+```
+
+**BAD:**
+```typescript
+// Event triggers distributed workflow
+await eventBus.emit('customer.converted', { userId: 123 });
+// Handler 1: sends welcome email
+// Handler 2: updates CRM
+// Handler 3: triggers automation
+// Handler 4: notifies sales team
+```
+
+### A.4 Event Emission Does Not Replace Service Orchestration
+
+> **Invariant A.4:** Event emission MUST NOT replace explicit service calls. Services call services directly. Events are side effects.
+
+**GOOD:**
+```typescript
+// Explicit service orchestration
+await customerService.updateStatus(botId, userId, 'converted');
+await bookingService.createBooking(params);
+await analytics.trackEvent(botId, 'conversion.completed', {});
+```
+
+**BAD:**
+```typescript
+// Event emission replaces orchestration
+await eventBus.emit('conversion.completed', { botId, userId, params });
+// Event handlers do the work
+```
+
+### A.5 Platform Remains Synchronous-First
+
+> **Invariant A.5:** The platform remains synchronous-first until scale explicitly requires otherwise. Async infrastructure is introduced ONLY when proven necessary.
+
+**RATIONALE:**
+- Current scale: single NestJS monolith
+- Current load: PostgreSQL handles all traffic
+- Current need: analytics aggregation, NOT distributed workflows
+- Future need: MAY require async if webhook processing slows down
+
+**WHEN async becomes justified:**
+- Webhook processing > 500ms consistently
+- Analytics writes block main thread
+- External integrations require non-blocking calls
+- Multiple services need to react to same event
+
+**UNTIL THEN:**
+- Synchronous service calls
+- Direct method invocations
+- Event emission as fire-and-forget side effect
+- NO event-driven architecture
+
+### A.6 Event Naming is Architecture
+
+> **Invariant A.6:** Event naming is part of platform architecture. Names MUST follow canonical taxonomy and MUST NOT drift.
+
+**RULES:**
+- Dot notation only (`booking.created`, NOT `booking:created`)
+- Past tense facts (`created`, NOT `create`)
+- Domain-first (`customer.tag.added`, NOT `tag.customer.added`)
+- Capability-neutral where possible (`conversion.completed`, NOT `booking.completed`)
+
+### A.7 Metadata is Context, Not Business Logic
+
+> **Invariant A.7:** Event metadata contains contextual information (template, channel, source). It MUST NOT contain business logic, control flags, or runtime decisions.
+
+**GOOD:**
+```typescript
+metadata: {
+  template: 'booking',
+  channel: 'miniapp',
+  source: 'webhook'
+}
+```
+
+**BAD:**
+```typescript
+metadata: {
+  shouldSendNotification: true,  // Business logic!
+  retryCount: 3,                 // Infrastructure!
+  nextStep: 'confirmBooking'     // Orchestration!
+}
+```
+
+---
+
 **This document is LAW.  
 Violations are NOT allowed.  
 Questions are encouraged.  

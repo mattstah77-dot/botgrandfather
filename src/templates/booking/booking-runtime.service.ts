@@ -50,10 +50,9 @@ export class BookingRuntimeService implements TemplateService {
       lastName: context.lastName,
     });
 
-    await this.analyticsService.trackEvent(context.botId, 'session:started', {
+    await this.analyticsService.trackEvent(context.botId, 'session.started', {
       template: 'booking',
       userId: context.userId,
-      flowType: 'booking',
     });
 
     const state = await this.getUserState(context);
@@ -514,10 +513,15 @@ export class BookingRuntimeService implements TemplateService {
       await queryRunner.release();
     }
 
-    await this.analyticsService.trackEvent(context.botId, 'session:completed', {
+    await this.analyticsService.trackEvent(context.botId, 'session.completed', {
       template: 'booking',
       userId: context.userId,
-      flowType: 'booking',
+    });
+
+    await this.analyticsService.trackEvent(context.botId, 'conversion.completed', {
+      template: 'booking',
+      userId: context.userId,
+      conversionType: 'booking',
     });
 
     await this.analyticsService.trackEvent(context.botId, 'conversion:achieved', {
@@ -544,7 +548,7 @@ export class BookingRuntimeService implements TemplateService {
   private async handleCancelBooking(context: TemplateContext): Promise<void> {
     const config = context.botConfig as BookingConfig;
 
-    await this.analyticsService.trackEvent(context.botId, 'session:abandoned', {
+    await this.analyticsService.trackEvent(context.botId, 'session.abandoned', {
       template: 'booking',
       userId: context.userId,
       flowType: 'booking',

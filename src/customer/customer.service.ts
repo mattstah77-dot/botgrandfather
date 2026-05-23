@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, QueryFailedError } from 'typeorm';
 import { Customer } from './entities/customer.entity';
+import { AnalyticsService } from '../analytics/analytics.service';
 
 /**
  * CustomerService — universal customer lifecycle management.
@@ -17,6 +18,7 @@ export class CustomerService {
   constructor(
     @InjectRepository(Customer)
     private readonly customerRepository: Repository<Customer>,
+    private readonly analyticsService: AnalyticsService,
   ) {}
 
   /**
@@ -54,6 +56,13 @@ export class CustomerService {
       try {
         await this.customerRepository.save(customer);
         this.logger.log(`Customer created: bot=${botId} user=${telegramUserId}`);
+        
+        // Emit customer lifecycle event
+        await this.analyticsService.trackEvent(botId, 'customer.created', {
+          userId: telegramUserId,
+          username: profile?.username,
+          source: 'runtime',
+        });
       } catch (error) {
         // Unique constraint violation — another webhook created the customer first
         if (error instanceof QueryFailedError) {
@@ -120,6 +129,15 @@ export class CustomerService {
 
     if (result.affected === 0) {
       this.logger.warn(`Customer not found for status update: bot=${botId} user=${telegramUserId}`);
+      return;
+    }
+
+    // Emit customer lifecycle event for conversion
+    if (status === 'converted') {
+      await this.analyticsService.trackEvent(botId, 'customer.converted', {
+        userId: telegramUserId,
+        source: 'runtime',
+      });
     }
   }
 

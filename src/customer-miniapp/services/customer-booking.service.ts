@@ -122,7 +122,7 @@ export class CustomerBookingService {
     // Track analytics
     await this.analyticsService.trackEvent(
       botId,
-      'conversion:achieved',
+      'conversion.completed',
       {
         template: 'booking',
         channel: 'miniapp',

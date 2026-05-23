@@ -3,28 +3,50 @@
  * No Kafka, no Redis, no event bus. Just typed event names for future hooks.
  *
  * Future analytics, billing, referrals will subscribe to these events.
+ *
+ * NAMING CONVENTION:
+ * - Dot notation only (booking.created, NOT booking:created)
+ * - Past tense for facts (created, NOT create)
+ * - Domain-first (customer.tag.added, NOT tag.customer.added)
+ * - Capability-neutral where possible (conversion.completed, NOT booking.completed)
  */
 
 export type PlatformEventType =
-  | 'bot:connected'
-  | 'bot:deleted'
-  | 'bot:config_updated'
-  | 'lead:created'
-  // Generic session events (template-agnostic)
-  | 'session:started'
-  | 'session:completed'
-  | 'session:abandoned'
-  // Conversion events (template-agnostic)
-  | 'conversion:achieved'
-  // Legacy funnel events (backward compatibility)
-  | 'funnel:started'
-  | 'funnel:completed'
-  | 'funnel:abandoned'
-  | 'owner:created'
-  | 'customer:created'
-  | 'customer:converted'
-  | 'subscription:activated'
-  | 'subscription:cancelled';
+  // Session lifecycle (runtime)
+  | 'session.started'
+  | 'session.completed'
+  | 'session.abandoned'
+  
+  // Conversion lifecycle (universal)
+  | 'conversion.completed'
+  
+  // Customer lifecycle (universal CRM layer)
+  | 'customer.created'
+  | 'customer.updated'
+  | 'customer.converted'
+  
+  // Booking capability events
+  | 'booking.created'
+  | 'booking.confirmed'
+  | 'booking.cancelled'
+  | 'booking.rescheduled'
+  
+  // Lead capability events
+  | 'lead.created'
+  
+  // Bot lifecycle (platform)
+  | 'bot.connected'
+  | 'bot.deleted'
+  | 'bot.config_updated'
+  
+  // Owner lifecycle (platform)
+  | 'owner.created'
+  
+  // Subscription/billing events (future)
+  | 'subscription.activated'
+  | 'subscription.cancelled'
+  | 'subscription.renewed'
+  | 'quota.exceeded';
 
 export interface PlatformEvent {
   type: PlatformEventType;

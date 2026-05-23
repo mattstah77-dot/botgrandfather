@@ -40,7 +40,7 @@ export class LeadFunnelService implements TemplateService {
     });
 
     // Track session start analytics (template-agnostic)
-    await this.analyticsService.trackEvent(context.botId, 'session:started', {
+    await this.analyticsService.trackEvent(context.botId, 'session.started', {
       template: 'lead-funnel',
       userId: context.userId,
       flowType: 'funnel',
@@ -279,13 +279,13 @@ export class LeadFunnelService implements TemplateService {
     }
 
     // Track analytics (non-critical, outside transaction)
-    await this.analyticsService.trackEvent(context.botId, 'session:completed', {
+    await this.analyticsService.trackEvent(context.botId, 'session.completed', {
       template: 'lead-funnel',
       userId: context.userId,
       flowType: 'funnel',
     });
 
-    await this.analyticsService.trackEvent(context.botId, 'conversion:achieved', {
+    await this.analyticsService.trackEvent(context.botId, 'conversion.completed', {
       template: 'lead-funnel',
       userId: context.userId,
       conversionType: 'lead',
