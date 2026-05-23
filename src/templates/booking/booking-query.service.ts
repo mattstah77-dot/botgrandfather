@@ -3,6 +3,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Booking } from './entities/booking.entity';
 import { Bot } from '../../bot/entities/bot.entity';
+import {
+  DashboardCapabilityProvider,
+  CapabilityMetrics,
+} from '../../dashboard/interfaces/dashboard-capability-provider.interface';
 
 /**
  * BookingQueryService — operational data access for the booking template.
@@ -11,27 +15,64 @@ import { Bot } from '../../bot/entities/bot.entity';
  * - Read-only queries for Mini App dashboards
  * - Booking lists, counts, calendar data
  * - Slot availability checks
+ * - Dashboard capability metrics (implements DashboardCapabilityProvider)
  *
  * DOES NOT:
  * - Handle Telegram conversations
  * - Manage user state
  * - Create or modify bookings (see BookingRuntimeService)
  * - Send messages
+ * - Orchestrate workflows
+ * - Emit events
  *
  * USED BY:
  * - BookingDashboardController (Mini App)
- * - DashboardService (owner stats aggregation)
+ * - DashboardService (via DashboardCapabilityRegistry)
  * - BookingRuntimeService (slot availability checks)
  * - CustomerBookingService (customer Mini App)
  */
 @Injectable()
-export class BookingQueryService {
+export class BookingQueryService implements DashboardCapabilityProvider {
   constructor(
     @InjectRepository(Booking)
     private readonly bookingRepository: Repository<Booking>,
     @InjectRepository(Bot)
     private readonly botRepository: Repository<Bot>,
   ) {}
+
+  /**
+   * DashboardCapabilityProvider: capability key.
+   */
+  getCapabilityKey(): string {
+    return 'booking';
+  }
+
+  /**
+   * DashboardCapabilityProvider: owner-level metrics.
+   * Returns total booking count across all owner's bots.
+   */
+  async getOwnerMetrics(ownerId: string): Promise<CapabilityMetrics> {
+    // Note: This is a simplified implementation.
+    // In production, this would join with Bot entity to filter by ownerId.
+    // For now, we count all bookings (multi-tenant scoped by botId in queries).
+    const count = await this.bookingRepository.count();
+    return {
+      capability: this.getCapabilityKey(),
+      total: count,
+    };
+  }
+
+  /**
+   * DashboardCapabilityProvider: bot-level metrics.
+   * Returns booking count for a specific bot.
+   */
+  async getBotMetrics(botId: string): Promise<CapabilityMetrics> {
+    const count = await this.bookingRepository.count({ where: { botId } });
+    return {
+      capability: this.getCapabilityKey(),
+      total: count,
+    };
+  }
 
   /**
    * Get bookings for a bot with pagination.

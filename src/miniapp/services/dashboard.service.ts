@@ -3,8 +3,7 @@ import { BotService } from '../../bot/bot.service';
 import { CustomerService } from '../../customer/customer.service';
 import { OwnerService } from '../../owner/owner.service';
 import { AnalyticsService } from '../../analytics/analytics.service';
-import { BookingQueryService } from '../../templates/booking/booking-query.service';
-import { LeadFunnelQueryService } from '../../templates/lead-funnel/lead-funnel-query.service';
+import { DashboardCapabilityRegistry } from '../../dashboard/dashboard-capability.registry';
 
 /**
  * DashboardService — aggregates data for Mini App operational views.
@@ -13,11 +12,16 @@ import { LeadFunnelQueryService } from '../../templates/lead-funnel/lead-funnel-
  * This service ONLY reads data from other services.
  * It does NOT contain business logic, runtime logic, or template logic.
  *
- * It is the data aggregation layer for the Mini App.
+ * CAPABILITY AGGREGATION:
+ * Template-specific metrics come from DashboardCapabilityRegistry,
+ * NOT from direct query service injection.
  *
- * TEMPLATE ISOLATION:
- * Template-specific counts come from query services (BookingQueryService),
- * NOT from BotService. BotService must remain template-agnostic.
+ * WHY registry pattern:
+ * - Adding a new capability does NOT require modifying this service
+ * - DashboardService orchestrates aggregation, does NOT know individual capabilities
+ * - Prevents god-class growth as capabilities multiply
+ *
+ * This service is the data aggregation layer for the Mini App.
  */
 @Injectable()
 export class DashboardService {
@@ -28,8 +32,7 @@ export class DashboardService {
     private readonly botService: BotService,
     private readonly customerService: CustomerService,
     private readonly analyticsService: AnalyticsService,
-    private readonly bookingQueryService: BookingQueryService,
-    private readonly leadFunnelQueryService: LeadFunnelQueryService,
+    private readonly capabilityRegistry: DashboardCapabilityRegistry,
   ) {}
 
   /**
@@ -65,6 +68,10 @@ export class DashboardService {
    * Get universal stats for an owner across all bots.
    *
    * SCALABILITY: Uses single aggregated queries instead of N+1 per bot.
+   *
+   * CAPABILITY AGGREGATION:
+   * Template-specific metrics aggregated from capability registry.
+   * Adding new capabilities does NOT require modifying this method.
    */
   async getOwnerStats(ownerId: string) {
     const bots = await this.botService.getOwnerBots(ownerId);
@@ -82,27 +89,18 @@ export class DashboardService {
     // Single query: all customer counts for all bots
     const customerCountsByBot = await this.customerService.countByStatusForBots(botIds);
 
-    // Single query: all lead counts for all bots (template-specific)
-    // NOTE: Uses LeadFunnelQueryService directly, NOT BotService.
-    // BotService must remain template-agnostic.
-    const leadCountsByBot = await this.leadFunnelQueryService.countLeadsByBotIds(botIds);
-
-    // Single query: all booking counts for all bots (template-specific interactions)
-    // NOTE: Uses BookingQueryService directly, NOT BotService.
-    // BotService must remain template-agnostic.
-    const bookingCountsByBot = await this.bookingQueryService.countBookingsByBotIds(botIds);
+    // Aggregate capability-specific interactions from all registered providers
+    // This is the key improvement: no direct injection needed for new capabilities
+    let totalInteractions = 0;
+    const capabilityProviders = this.capabilityRegistry.getAll();
+    for (const provider of capabilityProviders) {
+      const metrics = await provider.getOwnerMetrics(ownerId);
+      totalInteractions += metrics.total;
+    }
 
     let totalCustomers = 0;
     for (const botCounts of Object.values(customerCountsByBot)) {
       totalCustomers += Object.values(botCounts).reduce((a, b) => a + b, 0);
-    }
-
-    let totalInteractions = 0;
-    for (const count of Object.values(leadCountsByBot)) {
-      totalInteractions += count;
-    }
-    for (const count of Object.values(bookingCountsByBot)) {
-      totalInteractions += count;
     }
 
     return {
@@ -116,27 +114,28 @@ export class DashboardService {
    * Get stats for a specific bot.
    *
    * TEMPLATE ISOLATION:
-   * Template-specific counts come from query services, NOT BotService.
-   * BotService must remain template-agnostic.
+   * Template-specific counts aggregated from capability registry.
+   * BotService remains template-agnostic.
    */
   async getBotStats(botId: string) {
     const overview = await this.botService.getBotOverview(botId);
     const statusCounts = await this.customerService.countByStatus(botId);
     const customerCount = Object.values(statusCounts).reduce((a, b) => a + b, 0);
 
-    // Template-specific counts from query services
-    const bookingCounts = await this.bookingQueryService.countBookingsByBotIds([botId]);
-    const bookingCount = bookingCounts[botId] || 0;
-
-    const leadCounts = await this.leadFunnelQueryService.countLeadsByBotIds([botId]);
-    const leadCount = leadCounts[botId] || 0;
+    // Aggregate capability-specific metrics from all registered providers
+    // This is the key improvement: no direct injection needed for new capabilities
+    const capabilityProviders = this.capabilityRegistry.getAll();
+    const capabilityMetrics: Record<string, number> = {};
+    for (const provider of capabilityProviders) {
+      const metrics = await provider.getBotMetrics(botId);
+      capabilityMetrics[provider.getCapabilityKey()] = metrics.total;
+    }
 
     return {
       ...overview,
       customerCount,
       customersByStatus: statusCounts,
-      leadCount,
-      bookingCount,
+      ...capabilityMetrics,
     };
   }
 

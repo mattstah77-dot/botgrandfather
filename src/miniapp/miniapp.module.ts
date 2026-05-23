@@ -13,6 +13,7 @@ import { BotModule } from '../bot/bot.module';
 import { CustomerModule } from '../customer/customer.module';
 import { AnalyticsModule } from '../analytics/analytics.module';
 import { TemplateModule } from '../templates/template.module';
+import { DashboardModule } from '../dashboard/dashboard.module';
 import { Bot } from '../bot/entities/bot.entity';
 
 /**
@@ -55,6 +56,7 @@ import { Bot } from '../bot/entities/bot.entity';
     OwnershipModule,
     TemplateModule,
     MiniAppAuthModule,
+    DashboardModule,
   ],
   controllers: [MiniappController, OwnerDashboardController, BookingDashboardController],
   providers: [
