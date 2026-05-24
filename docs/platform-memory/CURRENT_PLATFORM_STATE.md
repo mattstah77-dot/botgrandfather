@@ -11,16 +11,24 @@
 
 | Area | Status |
 |------|--------|
-| Runtime/Operational Separation | ✅ STABLE |
-| Customer Universality | ✅ STABLE |
-| Event Taxonomy | ✅ STABLE |
-| Dashboard Aggregation | ✅ STABLE (Capability Provider) |
-| Multi-Tenant Isolation | ✅ STABLE |
-| Booking Template | ✅ IMPLEMENTED |
-| Lead Funnel Template | ✅ IMPLEMENTED |
-| Support Desk Template | ✅ IMPLEMENTED (MVP) |
-| Third Capability Validation | ✅ VALIDATED |
-| Contract Stabilization | ✅ COMPLETE |
+| Runtime foundation | ✅ STABLE |
+| Ownership system | ✅ STABLE |
+| Customer layer | ✅ STABLE |
+| Event system | ✅ STABLE |
+| Dashboard aggregation | ✅ STABLE (Capability Provider) |
+| Multi-tenant isolation | ✅ STABLE |
+| Template system | ✅ STABLE |
+| Booking capability | ✅ IMPLEMENTED |
+| Support Desk capability | ✅ IMPLEMENTED |
+| Lead Funnel capability | ✅ IMPLEMENTED |
+| Capability isolation | ✅ VALIDATED (6/6 boundaries PASS) |
+| Multi-capability visibility | ✅ VALIDATED (safe aggregation defined) |
+| Ecosystem boundaries | ✅ DEFINED (canonical law document) |
+| Customer operational model | ✅ DEFINED (identity philosophy) |
+| Operational feed philosophy | ✅ DEFINED (observational only) |
+| Dashboard scalability | ✅ VALIDATED (10+ capabilities safe) |
+| Event taxonomy hardening | ✅ COMPLETE (v1.1 cross-capability rules) |
+| Forbidden drift patterns | ✅ DOCUMENTED (10 patterns + alternatives) |
 | Frontend Mini App | ⚠️ PARTIAL (Booking + Support views) |
 | Booking Temporal Semantics | ❌ NOT DEFINED |
 | Test Coverage | ❌ NOT IMPLEMENTED |

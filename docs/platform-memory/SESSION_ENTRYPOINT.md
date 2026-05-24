@@ -122,6 +122,8 @@ It IS:
 | 3 | `invariants/runtime-operational-separation.md` | 10 min | Core architectural law |
 | 4 | `invariants/event-semantics.md` | 10 min | Event naming and semantics |
 | 5 | `anti-patterns/forbidden-directions.md` | 10 min | What MUST NEVER happen |
+| 6 | `philosophy/ecosystem-boundaries.md` | 10 min | Multi-capability coexistence law |
+| 7 | `anti-patterns/ecosystem-drift.md` | 10 min | Forbidden future directions |
 
 ### Phase 1 — Context Deepening (30 minutes)
 
@@ -143,8 +145,11 @@ It IS:
 | Operational development | `architecture/operational-layer.md`, `contracts/dashboard-aggregation-contracts.md` |
 | Event emission | `contracts/event-contracts.md` |
 | Template development | `architecture/template-system.md`, `invariants/metadata-discipline.md` |
-| Dashboard changes | `architecture/dashboard-system.md`, `contracts/capability-contracts.md` |
+| Dashboard changes | `architecture/dashboard-system.md`, `contracts/capability-contracts.md`, `dashboard/dashboard-scalability-analysis.md` |
 | Booking Engine | `CURRENT_DEVELOPMENT_PHASE.md` (Booking section), wait for temporal semantics doc |
+| Multi-capability features | `philosophy/ecosystem-boundaries.md`, `operational/multi-capability-visibility.md` |
+| Customer layer changes | `customer/customer-operational-philosophy.md` |
+| Event system changes | `contracts/event-contracts.md`, `philosophy/operational-feed-philosophy.md` |
 
 ### Phase 3 — Reference (As Needed)
 
@@ -189,16 +194,19 @@ It IS:
 
 ## CURRENT PLATFORM PHASE
 
-**Phase:** Capability Stabilization
+**Phase:** Multi-Capability Operational Cohesion
 
-**Preceded by:** Foundation Stabilization (COMPLETE)
+**Preceded by:** Support Desk Implementation (COMPLETE)
 
 **Foundation Status:**
 - ✅ Runtime/Operational separation stable
 - ✅ Customer universality stable
 - ✅ Event taxonomy canonicalized
 - ✅ Dashboard aggregation stabilized (Capability Provider pattern)
-- ✅ 2 templates implemented (lead-funnel, booking)
+- ✅ 3 templates implemented (lead-funnel, booking, support)
+- ✅ Capability isolation validated (6/6 boundaries PASS)
+- ✅ Ecosystem boundaries defined (canonical law)
+- ✅ Multi-capability visibility validated
 
 **Active Work Streams:**
 - ⏳ Booking temporal semantics definition (B2)
@@ -212,6 +220,10 @@ It IS:
 - ❌ External analytics DB
 - ❌ Queue system
 - ❌ Microservices
+- ❌ Cross-capability orchestration
+- ❌ Workflow engines
+- ❌ Event-driven automation
+- ❌ Universal state machines
 
 **Safe:**
 - ✅ Booking temporal semantics
@@ -219,6 +231,8 @@ It IS:
 - ✅ Test coverage
 - ✅ Booking Engine (after B2)
 - ✅ CRM capability exploration
+- ✅ Operational composition (read-only)
+- ✅ Customer profile views (parallel queries)
 
 ---
 
