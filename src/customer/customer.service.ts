@@ -196,6 +196,15 @@ export class CustomerService {
 
     return grouped;
   }
+  /**
+   * Get customer by ID.
+   */
+  async getCustomerById(customerId: string): Promise<Customer | null> {
+    return this.customerRepository.findOne({
+      where: { id: customerId },
+    });
+  }
+
   async countByStatus(botId: string): Promise<Record<string, number>> {
     const results = await this.customerRepository
       .createQueryBuilder('c')

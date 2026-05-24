@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { DashboardCapabilityProvider } from './interfaces/dashboard-capability-provider.interface';
 import { BookingQueryService } from '../templates/booking/booking-query.service';
 import { LeadFunnelQueryService } from '../templates/lead-funnel/lead-funnel-query.service';
+import { SupportQueryService } from '../templates/support/support-query.service';
 
 /**
  * DashboardCapabilityRegistry — explicit capability registration.
@@ -20,7 +21,7 @@ import { LeadFunnelQueryService } from '../templates/lead-funnel/lead-funnel-que
  * - Debuggable: set breakpoint in constructor, see all providers
  *
  * WHY NOT dynamic discovery:
- * - We have 2-5 capabilities, not 50
+ * - We have 3 capabilities, not 50
  * - Dynamic discovery adds complexity without benefit at this scale
  * - Reflection and decorators are framework-building, NOT platform development
  * - Explicit is better than implicit for monolithic clarity
@@ -43,9 +44,11 @@ export class DashboardCapabilityRegistry {
     // This is the ONLY place that knows about all capabilities.
     bookingQueryService: BookingQueryService,
     leadFunnelQueryService: LeadFunnelQueryService,
+    supportQueryService: SupportQueryService,
   ) {
     this.register(bookingQueryService);
     this.register(leadFunnelQueryService);
+    this.register(supportQueryService);
   }
 
   private register(provider: DashboardCapabilityProvider): void {

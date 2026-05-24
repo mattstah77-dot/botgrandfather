@@ -171,4 +171,95 @@ export const api = {
     `/miniapp/bots/${botId}/bookings/${bookingId}/no-show`,
     { method: 'POST' },
   ),
+
+  // ─── SUPPORT DESK ENDPOINTS ────────────────────────────────
+
+  /** Get bot tickets (support desk capability) */
+  getBotTickets: (botId: string, page = 1, limit = 20, status?: string, search?: string, sort = 'newest') => {
+    const params = new URLSearchParams();
+    params.set('page', String(page));
+    params.set('limit', String(limit));
+    if (status) params.set('status', status);
+    if (search) params.set('search', search);
+    if (sort) params.set('sort', sort);
+    return request<{
+      items: Array<{
+        id: string;
+        subject: string | null;
+        status: string;
+        priority: string;
+        category: string | null;
+        assignedTo: string | null;
+        customerName: string | null;
+        customerUsername: string | null;
+        messageCount: number;
+        createdAt: string;
+        updatedAt: string;
+      }>;
+      pagination: { page: number; limit: number; total: number; pages: number };
+    }>(`/miniapp/bots/${botId}/tickets?${params.toString()}`);
+  },
+
+  /** Get single ticket detail */
+  getTicketDetail: (botId: string, ticketId: string) => request<{
+    id: string;
+    botId: string;
+    customerId: string;
+    customerName: string | null;
+    customerUsername: string | null;
+    status: string;
+    priority: string;
+    category: string | null;
+    subject: string | null;
+    assignedTo: string | null;
+    createdAt: string;
+    updatedAt: string;
+    resolvedAt: string | null;
+    closedAt: string | null;
+    messages: Array<{
+      id: string;
+      senderType: string;
+      senderName: string | null;
+      message: string;
+      isInternal: boolean;
+      createdAt: string;
+    }>;
+    availableActions: string[];
+  }>(`/miniapp/bots/${botId}/tickets/${ticketId}`),
+
+  /** Take (self-assign) a ticket */
+  takeTicket: (botId: string, ticketId: string, ownerId: string) => request<{ success: boolean; ticket: { id: string; status: string } }>(
+    `/miniapp/bots/${botId}/tickets/${ticketId}/take`,
+    { method: 'POST', body: JSON.stringify({ ownerId }) },
+  ),
+
+  /** Assign ticket to agent */
+  assignTicket: (botId: string, ticketId: string, assigneeId: string, assignedBy: string) => request<{ success: boolean; ticket: { id: string; status: string } }>(
+    `/miniapp/bots/${botId}/tickets/${ticketId}/assign`,
+    { method: 'POST', body: JSON.stringify({ assigneeId, assignedBy }) },
+  ),
+
+  /** Reply to a ticket */
+  replyToTicket: (botId: string, ticketId: string, message: string, senderId: string, botToken: string) => request<{ success: boolean; ticket: { id: string; status: string } }>(
+    `/miniapp/bots/${botId}/tickets/${ticketId}/reply`,
+    { method: 'POST', body: JSON.stringify({ message, senderId, botToken }) },
+  ),
+
+  /** Resolve a ticket */
+  resolveTicket: (botId: string, ticketId: string, resolvedBy: string, botToken: string) => request<{ success: boolean; ticket: { id: string; status: string } }>(
+    `/miniapp/bots/${botId}/tickets/${ticketId}/resolve`,
+    { method: 'POST', body: JSON.stringify({ resolvedBy, botToken }) },
+  ),
+
+  /** Close a ticket */
+  closeTicket: (botId: string, ticketId: string, closedBy: string, botToken: string) => request<{ success: boolean; ticket: { id: string; status: string } }>(
+    `/miniapp/bots/${botId}/tickets/${ticketId}/close`,
+    { method: 'POST', body: JSON.stringify({ closedBy, botToken }) },
+  ),
+
+  /** Reopen a ticket */
+  reopenTicket: (botId: string, ticketId: string, reopenedBy: string) => request<{ success: boolean; ticket: { id: string; status: string } }>(
+    `/miniapp/bots/${botId}/tickets/${ticketId}/reopen`,
+    { method: 'POST', body: JSON.stringify({ reopenedBy }) },
+  ),
 };

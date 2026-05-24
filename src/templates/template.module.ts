@@ -15,6 +15,10 @@ import { Template2Service } from './template2/template2.service';
 import { Template3Service } from './template3/template3.service';
 import { BookingRuntimeService } from './booking/booking-runtime.service';
 import { BookingQueryService } from './booking/booking-query.service';
+import { SupportRuntimeService } from './support/support-runtime.service';
+import { SupportQueryService } from './support/support-query.service';
+import { Ticket } from './support/entities/ticket.entity';
+import { TicketMessage } from './support/entities/ticket-message.entity';
 
 @Global()
 @Module({
@@ -22,7 +26,7 @@ import { BookingQueryService } from './booking/booking-query.service';
     TelegramModule,
     CustomerModule,
     AnalyticsModule,
-    TypeOrmModule.forFeature([UserState, Bot, Lead, Booking]),
+    TypeOrmModule.forFeature([UserState, Bot, Lead, Booking, Ticket, TicketMessage]),
   ],
   providers: [
     TemplateFactory,
@@ -33,7 +37,9 @@ import { BookingQueryService } from './booking/booking-query.service';
     Template3Service,
     BookingRuntimeService,
     BookingQueryService,
+    SupportRuntimeService,
+    SupportQueryService,
   ],
-  exports: [TemplateFactory, LeadFunnelQueryService, BookingQueryService],
+  exports: [TemplateFactory, LeadFunnelQueryService, BookingQueryService, SupportQueryService],
 })
 export class TemplateModule {}

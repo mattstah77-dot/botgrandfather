@@ -18,6 +18,9 @@ import './lead-funnel/lead-funnel.owner-module';
 // Side-effect: registers booking owner module
 import '../templates/booking/booking.owner-module';
 
+// Side-effect: registers support desk owner module
+import '../templates/support/support.owner-module';
+
 @Module({
   controllers: [OwnerModulesController],
   providers: [],

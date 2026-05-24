@@ -48,7 +48,7 @@ export function CapabilityPage() {
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortOrder, setSortOrder] = useState<'date-desc' | 'date-asc'>('date-desc');
+  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest' | 'priority'>('newest');
   const limit = 20;
 
   const loadData = useCallback(() => {
@@ -61,7 +61,7 @@ export function CapabilityPage() {
     api.getCapabilityData(botId, capability, page, limit, statusFilter, searchQuery, sortOrder)
       .then((res) => {
         setData({
-          items: res.items.map(transformToCapabilityItem),
+          items: res.items.map((item: any) => transformToCapabilityItem(item, capability)),
           pagination: res.pagination,
         });
         setLoading(false);
@@ -161,17 +161,13 @@ export function CapabilityPage() {
               fontSize: '14px',
             }}
           >
-            <option value="">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="confirmed">Confirmed</option>
-            <option value="cancelled">Cancelled</option>
-            <option value="completed">Completed</option>
-            <option value="no-show">No Show</option>
+            {getStatusOptions(capability)}
           </select>
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <button
-            onClick={() => setSortOrder((s) => (s === 'date-desc' ? 'date-asc' : 'date-desc'))}
+          <select
+            value={sortOrder}
+            onChange={(e) => setSortOrder(e.target.value as 'newest' | 'oldest' | 'priority')}
             style={{
               padding: '6px 12px',
               borderRadius: '8px',
@@ -182,8 +178,8 @@ export function CapabilityPage() {
               cursor: 'pointer',
             }}
           >
-            Sort: {sortOrder === 'date-desc' ? 'Newest First' : 'Oldest First'}
-          </button>
+            {getSortOptions(capability)}
+          </select>
           <button
             onClick={loadData}
             style={{
@@ -212,7 +208,7 @@ export function CapabilityPage() {
               key={item.id}
               item={item}
               capability={capability}
-              onClick={() => navigate(`/bots/${botId}/bookings/${item.id}`)}
+              onClick={() => navigateToDetail(navigate, botId!, capability, item.id)}
             />
           ))}
         </div>
@@ -259,18 +255,49 @@ export function CapabilityPage() {
 }
 
 /**
+ * Navigate to detail page based on capability.
+ */
+function navigateToDetail(navigate: ReturnType<typeof useNavigate>, botId: string, capability: string, itemId: string) {
+  if (capability === 'bookings' || capability === 'booking') {
+    navigate(`/bots/${botId}/bookings/${itemId}`);
+  } else if (capability === 'tickets' || capability === 'support') {
+    navigate(`/bots/${botId}/tickets/${itemId}`);
+  }
+}
+
+/**
  * Transform capability-specific API response to generic CapabilityItem.
  */
-function transformToCapabilityItem(item: any): CapabilityItem {
+function transformToCapabilityItem(item: any, capability: string): CapabilityItem {
   // Booking transformation
-  if (item.serviceName && item.date && item.timeSlot) {
+  if (capability === 'bookings' || capability === 'booking' || item.serviceName) {
     return {
       id: item.id,
-      title: item.serviceName,
-      subtitle: `${item.date} at ${item.timeSlot}`,
+      title: item.serviceName || 'Booking',
+      subtitle: item.date && item.timeSlot ? `${item.date} at ${item.timeSlot}` : undefined,
       status: item.status,
       metadata: {
         username: item.username,
+        createdAt: item.createdAt,
+      },
+    };
+  }
+
+  // Support desk transformation
+  if (capability === 'tickets' || capability === 'support' || item.customerId) {
+    return {
+      id: item.id,
+      title: item.subject || 'No Subject',
+      subtitle: item.customerName
+        ? `${item.customerName}${item.messageCount ? ` · ${item.messageCount} messages` : ''}`
+        : item.customerUsername
+        ? `@${item.customerUsername}${item.messageCount ? ` · ${item.messageCount} messages` : ''}`
+        : undefined,
+      status: item.status,
+      metadata: {
+        priority: item.priority,
+        assignedTo: item.assignedTo,
+        category: item.category,
         createdAt: item.createdAt,
       },
     };
@@ -287,12 +314,60 @@ function transformToCapabilityItem(item: any): CapabilityItem {
 }
 
 /**
+ * Get status filter options for a capability.
+ */
+function getStatusOptions(capability: string) {
+  const bookingStatuses = [
+    <option key="all" value="">All Status</option>,
+    <option key="pending" value="pending">Pending</option>,
+    <option key="confirmed" value="confirmed">Confirmed</option>,
+    <option key="cancelled" value="cancelled">Cancelled</option>,
+    <option key="completed" value="completed">Completed</option>,
+    <option key="no-show" value="no-show">No Show</option>,
+  ];
+
+  const ticketStatuses = [
+    <option key="all" value="">All Status</option>,
+    <option key="open" value="open">Open</option>,
+    <option key="in-progress" value="in-progress">In Progress</option>,
+    <option key="resolved" value="resolved">Resolved</option>,
+    <option key="closed" value="closed">Closed</option>,
+  ];
+
+  if (capability === 'tickets' || capability === 'support') {
+    return ticketStatuses;
+  }
+
+  return bookingStatuses;
+}
+
+/**
+ * Get sort options for a capability.
+ */
+function getSortOptions(capability: string) {
+  const common = [
+    <option key="newest" value="newest">Newest First</option>,
+    <option key="oldest" value="oldest">Oldest First</option>,
+  ];
+
+  if (capability === 'tickets' || capability === 'support') {
+    return [
+      ...common,
+      <option key="priority" value="priority">Priority</option>,
+    ];
+  }
+
+  return common;
+}
+
+/**
  * Map navigation IDs to capability keys and display titles.
  */
 const CAPABILITY_MAP: Record<string, { key: string; title: string }> = {
   bookings: { key: 'booking', title: 'Bookings' },
   calendar: { key: 'booking', title: 'Calendar' },
   leads: { key: 'lead-funnel', title: 'Leads' },
+  tickets: { key: 'support', title: 'Tickets' },
 };
 
 /**
@@ -312,8 +387,9 @@ function capitalize(s: string): string {
 /**
  * CapabilityCard — renders capability item generically.
  *
- * TRANSITIONAL: Booking-specific click navigation is explicit.
- * When a third template needs detail views, extract pattern.
+ * THIRD CAPABILITY VALIDATION:
+ * Support desk cards show priority, assignment, and message count.
+ * No template-specific hardcoding — all data from CapabilityItem.
  */
 function CapabilityCard({
   item,
@@ -324,7 +400,7 @@ function CapabilityCard({
   capability: string;
   onClick?: () => void;
 }) {
-  const isBooking = capability === 'bookings' || capability === 'booking';
+  const isDetail = capability === 'bookings' || capability === 'booking' || capability === 'tickets' || capability === 'support';
 
   return (
     <div
@@ -346,18 +422,33 @@ function CapabilityCard({
           {item.subtitle}
         </div>
       )}
-      {item.metadata?.username && (
-        <div style={{ fontSize: '13px', color: 'var(--tg-theme-hint-color)', marginTop: '4px' }}>
-          👤 @{item.metadata.username}
+      {item.metadata?.priority && (
+        <div style={{ fontSize: '12px', color: getPriorityColor(item.metadata.priority), marginTop: '4px', fontWeight: 500 }}>
+          {item.metadata.priority.toUpperCase()} PRIORITY
         </div>
       )}
-      {isBooking && onClick && (
+      {item.metadata?.assignedTo && (
+        <div style={{ fontSize: '12px', color: 'var(--tg-theme-hint-color)', marginTop: '2px' }}>
+          👤 Assigned: {item.metadata.assignedTo}
+        </div>
+      )}
+      {isDetail && onClick && (
         <div style={{ fontSize: '12px', color: 'var(--tg-theme-button-color)', marginTop: '6px' }}>
           View details →
         </div>
       )}
     </div>
   );
+}
+
+function getPriorityColor(priority: string): string {
+  const colors: Record<string, string> = {
+    urgent: '#e74c3c',
+    high: '#e67e22',
+    medium: '#f39c12',
+    low: '#27ae60',
+  };
+  return colors[priority] || '#95a5a6';
 }
 
 function StatusBadge({ status }: { status: string }) {
@@ -367,6 +458,10 @@ function StatusBadge({ status }: { status: string }) {
     cancelled: '#e74c3c',
     completed: '#3498db',
     'no-show': '#95a5a6',
+    open: '#e74c3c',
+    'in-progress': '#3498db',
+    resolved: '#27ae60',
+    closed: '#95a5a6',
   };
 
   return (

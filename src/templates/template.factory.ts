@@ -12,6 +12,8 @@ import { Template3Service } from './template3/template3.service';
 import { Template3Handler } from './template3/template3.handler';
 import { BookingRuntimeService } from './booking/booking-runtime.service';
 import { BookingHandler } from './booking/booking.handler';
+import { SupportRuntimeService } from './support/support-runtime.service';
+import { SupportHandler } from './support/support.handler';
 
 /**
  * SINGLETON: One TemplateFactory holds ALL template handlers.
@@ -30,6 +32,7 @@ export class TemplateFactory {
     private readonly template3Service: Template3Service,
     private readonly leadFunnelService: LeadFunnelService,
     private readonly bookingRuntimeService: BookingRuntimeService,
+    private readonly supportRuntimeService: SupportRuntimeService,
   ) {
     this.initializeHandlers();
   }
@@ -41,6 +44,7 @@ export class TemplateFactory {
     this.handlers.set('template3', new Template3Handler(this.template3Service));
     this.handlers.set('lead-funnel', new LeadFunnelHandler(this.leadFunnelService, this.telegramService));
     this.handlers.set('booking', new BookingHandler(this.bookingRuntimeService, this.telegramService));
+    this.handlers.set('support', new SupportHandler(this.supportRuntimeService, this.telegramService));
   }
 
   /**

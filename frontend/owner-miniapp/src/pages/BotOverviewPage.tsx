@@ -221,6 +221,9 @@ const CAPABILITY_ACTIONS: Record<string, CapabilityAction[]> = {
   'lead-funnel': [
     { id: 'view-leads', label: 'View Leads', type: 'navigate', route: '/capabilities/leads', icon: '📊' },
   ],
+  support: [
+    { id: 'view-tickets', label: 'View Tickets', type: 'navigate', route: '/capabilities/tickets', icon: '🎫' },
+  ],
 };
 
 /**

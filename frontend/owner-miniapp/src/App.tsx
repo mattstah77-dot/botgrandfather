@@ -4,6 +4,7 @@ import { DashboardPage } from './pages/DashboardPage';
 import { BotOverviewPage } from './pages/BotOverviewPage';
 import { CapabilityPage } from './pages/CapabilityPage';
 import { BookingDetailPage } from './pages/BookingDetailPage';
+import { TicketDetailPage } from './pages/TicketDetailPage';
 import { CustomersPage } from './pages/CustomersPage';
 import { Layout } from './components/Layout';
 
@@ -45,6 +46,7 @@ export default function App() {
 
             {/* Capability-specific detail routes — EXPLICIT, not dynamic */}
             <Route path="/bots/:botId/bookings/:bookingId" element={<BookingDetailPage />} />
+            <Route path="/bots/:botId/tickets/:ticketId" element={<TicketDetailPage />} />
 
             {/* Legacy redirects (transitional) */}
             <Route path="/bots/:id/bookings" element={<Navigate to="/bots/:id/capabilities/booking" replace />} />
