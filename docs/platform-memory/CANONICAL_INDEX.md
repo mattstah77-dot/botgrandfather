@@ -16,6 +16,9 @@
 | `philosophy/anti-overengineering.md` | Why we reject framework-building |
 | `philosophy/abstraction-emergence.md` | When abstraction is justified |
 | `philosophy/operational-composition.md` | Metadata philosophy |
+| `philosophy/operational-ui-philosophy.md` | What operational UI is and is not |
+| `philosophy/settings-philosophy.md` | Settings are operational, not runtime |
+| `philosophy/documentation-boundaries.md` | Why platform memory stays clean and canonical |
 
 ### I Need to Know Platform Laws
 
@@ -45,7 +48,10 @@
 | Event emission | `contracts/event-contracts.md` |
 | New template | `architecture/template-system.md`, `invariants/metadata-discipline.md` |
 | Dashboard changes | `architecture/dashboard-system.md`, `contracts/capability-contracts.md` |
-| Booking Engine | `CURRENT_DEVELOPMENT_PHASE.md`, wait for temporal semantics |
+| Booking Engine | `contracts/booking-temporal-semantics.md`, `CURRENT_DEVELOPMENT_PHASE.md` |
+| Support Desk | `contracts/support-desk-semantics.md`, `CONTRACT_STABILIZATION_REPORT.md` |
+| Settings | `contracts/settings-contracts.md`, `philosophy/settings-philosophy.md` |
+| Actions | `contracts/action-contracts.md`, `CONTRACT_STABILIZATION_REPORT.md` |
 
 ### I Need to Avoid Mistakes
 
@@ -54,6 +60,7 @@
 | `anti-patterns/forbidden-directions.md` | What MUST NEVER happen |
 | `anti-patterns/drift-detection.md` | How to detect drift |
 | `anti-patterns/premature-abstraction.md` | Abstraction anti-patterns |
+| `anti-patterns/metadata-creep.md` | Detecting metadata-driven logic drift |
 
 ### I Need Terminology Clarity
 
@@ -87,11 +94,18 @@
 - `contracts/capability-contracts.md`
 - `contracts/query-service-contracts.md`
 - `contracts/dashboard-aggregation-contracts.md`
+- `contracts/booking-temporal-semantics.md`
+- `contracts/support-desk-semantics.md`
+- `contracts/settings-contracts.md`
+- `contracts/action-contracts.md`
 
 ### Tier 3 — Current Platform State
 
 - `CURRENT_PLATFORM_STATE.md`
 - `CURRENT_DEVELOPMENT_PHASE.md`
+- `OPERATIONAL_UI_DRIFT_AUDIT.md`
+- `CONTRACT_STABILIZATION_REPORT.md`
+- `THIRD_CAPABILITY_VALIDATION_REPORT.md`
 
 ### Tier 4 — Architecture Descriptions
 
@@ -121,7 +135,12 @@
 | What does "capability" mean? | `glossary/canonical-terminology.md` |
 | Why was Y decided? | `historical/decision-log.md` |
 | Is Z safe to work on? | `CURRENT_DEVELOPMENT_PHASE.md` + `anti-patterns/` |
+| How do settings work? | `contracts/settings-contracts.md` + `philosophy/settings-philosophy.md` |
+| How do actions work? | `contracts/action-contracts.md` |
+| Is the platform universal? | `THIRD_CAPABILITY_VALIDATION_REPORT.md` |
+| What contracts exist? | `CONTRACT_STABILIZATION_REPORT.md` |
+| How to detect metadata creep? | `anti-patterns/metadata-creep.md` |
 
 ---
 
-**Version 1.0 — 2026-05-23**
+**Version 1.2 — 2026-05-23**

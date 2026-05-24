@@ -277,15 +277,29 @@ export class BookingRuntimeService implements TemplateService {
     date: string,
   ): Promise<void> {
     const config = context.botConfig as BookingConfig;
-    const selectedDate = new Date(date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const selectedDate = new Date(date + 'T00:00:00');
+    const now = new Date();
 
+    // CANONICAL: Past-time protection (Section 3)
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     if (selectedDate < today) {
       await this.telegramService.sendMessage(
         context.botToken,
         context.chatId,
         'Please select a future date.',
+      );
+      return;
+    }
+
+    // CANONICAL: Advance booking limit (Section 3)
+    const advanceDays = config.advanceBookingDays ?? 30;
+    const maxDate = new Date(today);
+    maxDate.setDate(today.getDate() + advanceDays);
+    if (selectedDate > maxDate) {
+      await this.telegramService.sendMessage(
+        context.botToken,
+        context.chatId,
+        `Bookings can only be made up to ${advanceDays} days in advance. Please select a closer date.`,
       );
       return;
     }
@@ -309,7 +323,7 @@ export class BookingRuntimeService implements TemplateService {
       selectedDate: date,
     });
 
-    await this.sendTimeSelection(context, config, date, dayConfig.slots);
+    await this.sendTimeSelection(context, config, date, dayConfig.slots, now);
   }
 
   // ─── Time Selection ───────────────────────────────────────────
@@ -319,11 +333,26 @@ export class BookingRuntimeService implements TemplateService {
     config: BookingConfig,
     date: string,
     slots: { time: string; durationMinutes: number }[],
+    now?: Date, // For testing
   ): Promise<void> {
     const bookedSlots = await this.bookingQueryService.getBookedSlots(context.botId, date);
     const bookedTimes = new Set(bookedSlots.map((b) => b.timeSlot));
 
-    const availableSlots = slots.filter((slot) => !bookedTimes.has(slot.time));
+    // CANONICAL: Minimum notice period filter (Section 3)
+    const minimumNoticeHours = config.minimumNoticeHours ?? 2;
+    const nowDate = now ?? new Date();
+    const selectedDate = new Date(date + 'T00:00:00');
+    const today = new Date(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate());
+    
+    // If booking for today, filter out slots that are within minimum notice period
+    let availableSlots = slots.filter((slot) => !bookedTimes.has(slot.time));
+    
+    if (selectedDate.getTime() === today.getTime()) {
+      const minTime = new Date(nowDate);
+      minTime.setHours(minTime.getHours() + minimumNoticeHours);
+      const minTimeString = `${String(minTime.getHours()).padStart(2, '0')}:${String(minTime.getMinutes()).padStart(2, '0')}`;
+      availableSlots = availableSlots.filter((slot) => slot.time >= minTimeString);
+    }
 
     if (availableSlots.length === 0) {
       await this.telegramService.sendMessage(
@@ -524,10 +553,10 @@ export class BookingRuntimeService implements TemplateService {
       conversionType: 'booking',
     });
 
-    await this.analyticsService.trackEvent(context.botId, 'conversion:achieved', {
+    // CANONICAL: booking.created event per booking-temporal-semantics.md
+    await this.analyticsService.trackEvent(context.botId, 'booking.created', {
       template: 'booking',
       userId: context.userId,
-      conversionType: 'booking',
       serviceId: service.id,
       date: progress.selectedDate,
       timeSlot: progress.selectedTime,
@@ -547,6 +576,13 @@ export class BookingRuntimeService implements TemplateService {
 
   private async handleCancelBooking(context: TemplateContext): Promise<void> {
     const config = context.botConfig as BookingConfig;
+
+    // CANONICAL: booking.cancelled event per booking-temporal-semantics.md
+    await this.analyticsService.trackEvent(context.botId, 'booking.cancelled', {
+      template: 'booking',
+      userId: context.userId,
+      reason: 'customer_cancelled_during_flow',
+    });
 
     await this.analyticsService.trackEvent(context.botId, 'session.abandoned', {
       template: 'booking',
@@ -657,5 +693,142 @@ export class BookingRuntimeService implements TemplateService {
 
   private async clearUserState(context: TemplateContext): Promise<void> {
     await this.setUserState(context, 'idle', {});
+  }
+
+  // ─── Owner Operations (Runtime Methods) ──────────────────────
+
+  /**
+   * Confirm a pending booking (owner action).
+   * 
+   * CANONICAL: booking.confirmed event per temporal semantics §6.
+   * 
+   * @param botId - Bot ID (ownership verified by caller)
+   * @param bookingId - Booking ID
+   * @returns Updated booking
+   */
+  async confirmBooking(botId: string, bookingId: string): Promise<Booking> {
+    const booking = await this.bookingRepository.findOne({
+      where: { id: bookingId, botId },
+    });
+
+    if (!booking) {
+      throw new Error('Booking not found');
+    }
+
+    if (booking.status !== 'pending') {
+      throw new Error(`Cannot confirm booking with status: ${booking.status}`);
+    }
+
+    booking.status = 'confirmed';
+    await this.bookingRepository.save(booking);
+
+    // Emit canonical event
+    await this.analyticsService.trackEvent(botId, 'booking.confirmed', {
+      template: 'booking',
+      bookingId,
+      userId: Number(booking.userId),
+    });
+
+    return booking;
+  }
+
+  /**
+   * Cancel a booking (owner action).
+   * 
+   * CANONICAL: booking.cancelled event per temporal semantics §6.
+   * 
+   * @param botId - Bot ID (ownership verified by caller)
+   * @param bookingId - Booking ID
+   * @param reason - Cancellation reason (optional)
+   * @returns Updated booking
+   */
+  async cancelBooking(botId: string, bookingId: string, reason?: string): Promise<Booking> {
+    const booking = await this.bookingRepository.findOne({
+      where: { id: bookingId, botId },
+    });
+
+    if (!booking) {
+      throw new Error('Booking not found');
+    }
+
+    if (booking.status === 'completed' || booking.status === 'no-show') {
+      throw new Error(`Cannot cancel booking with status: ${booking.status}`);
+    }
+
+    booking.status = 'cancelled';
+    await this.bookingRepository.save(booking);
+
+    // Emit canonical event
+    await this.analyticsService.trackEvent(botId, 'booking.cancelled', {
+      template: 'booking',
+      bookingId,
+      userId: Number(booking.userId),
+      reason: reason || 'owner_cancelled',
+    });
+
+    return booking;
+  }
+
+  /**
+   * Mark booking as completed (owner action).
+   * 
+   * CANONICAL: booking.completed event per temporal semantics §6.
+   * 
+   * @param botId - Bot ID (ownership verified by caller)
+   * @param bookingId - Booking ID
+   * @returns Updated booking
+   */
+  async completeBooking(botId: string, bookingId: string): Promise<Booking> {
+    const booking = await this.bookingRepository.findOne({
+      where: { id: bookingId, botId },
+    });
+
+    if (!booking) {
+      throw new Error('Booking not found');
+    }
+
+    if (booking.status !== 'confirmed') {
+      throw new Error(`Cannot complete booking with status: ${booking.status}`);
+    }
+
+    booking.status = 'completed';
+    await this.bookingRepository.save(booking);
+
+    // Emit canonical event
+    await this.analyticsService.trackEvent(botId, 'booking.completed', {
+      template: 'booking',
+      bookingId,
+      userId: Number(booking.userId),
+    });
+
+    return booking;
+  }
+
+  /**
+   * Mark booking as no-show (owner action).
+   * 
+   * CANONICAL: no-show status per temporal semantics §6.
+   * 
+   * @param botId - Bot ID (ownership verified by caller)
+   * @param bookingId - Booking ID
+   * @returns Updated booking
+   */
+  async markNoShow(botId: string, bookingId: string): Promise<Booking> {
+    const booking = await this.bookingRepository.findOne({
+      where: { id: bookingId, botId },
+    });
+
+    if (!booking) {
+      throw new Error('Booking not found');
+    }
+
+    if (booking.status !== 'confirmed') {
+      throw new Error(`Cannot mark no-show for booking with status: ${booking.status}`);
+    }
+
+    booking.status = 'no-show';
+    await this.bookingRepository.save(booking);
+
+    return booking;
   }
 }

@@ -238,7 +238,13 @@ export class BotService {
 
   /**
    * Get lightweight overview for a bot.
-   * Returns basic bot info + counts (customers, leads, bookings, events).
+   * Returns basic bot info + universal counts only.
+   *
+   * CAPABILITY NEUTRALITY:
+   * BotService is template-agnostic. It does NOT return template-specific
+   * metrics (leads, bookings, orders). Those come from capability providers.
+   *
+   * Returns: customers (universal), events (universal), bot metadata.
    */
   async getBotOverview(botId: string): Promise<{
     id: string;
@@ -246,8 +252,6 @@ export class BotService {
     createdAt: Date;
     updatedAt: Date;
     customerCount: number;
-    leadCount: number;
-    bookingCount: number;
     eventCount: number;
   }> {
     const bot = await this.botRepository.findOne({
@@ -259,14 +263,6 @@ export class BotService {
       throw new NotFoundException(`Bot with ID ${botId} not found`);
     }
 
-    // Count leads — REMOVED from BotService.
-    // BotService is template-agnostic. Use LeadFunnelQueryService for lead counts.
-    const leadCount = 0;
-
-    // Count bookings — REMOVED from BotService.
-    // BotService is template-agnostic. Use BookingQueryService for booking counts.
-    const bookingCount = 0;
-
     // Count analytics events (business events, not webhook deliveries)
     const eventCount = await this.analyticsEventRepository.count({ where: { botId } });
 
@@ -276,8 +272,6 @@ export class BotService {
       createdAt: bot.createdAt,
       updatedAt: bot.updatedAt,
       customerCount: 0, // Will be populated by controller using CustomerService
-      leadCount,
-      bookingCount,
       eventCount,
     };
   }

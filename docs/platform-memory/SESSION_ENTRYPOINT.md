@@ -2,7 +2,7 @@
 
 **Purpose:** Mandatory bootstrap for ALL future isolated development sessions  
 **Status:** CANONICAL — Tier 1 Authority  
-**Version:** 1.0  
+**Version:** 1.1  
 **Date:** 2026-05-23
 
 ---
@@ -266,6 +266,56 @@ It IS:
 
 ---
 
+## MOST DANGEROUS PLATFORM RISKS
+
+The following are now considered **PRIMARY architectural threats**. Any proposal, code, or document that moves the platform in these directions MUST be rejected immediately.
+
+### 1. Framework-Building Behavior
+
+Building generic engines, universal builders, or pluggable runtimes before 3+ proven repetitions exist. This is the #1 drift vector.
+
+**Red flags:** "universal workflow engine," "generic form builder," "pluggable calendar provider," "shared scheduling kernel."
+
+### 2. Premature Abstraction
+
+Abstracting at 1–2 instances instead of waiting for 3+ proven repetitions. Creates unmaintainable straitjackets and solves hypothetical problems.
+
+**Red flags:** "Let's make this generic," "Let's create a base class," "Let's design a framework component."
+
+### 3. Metadata-Driven Orchestration
+
+Allowing metadata (JSON, YAML, DSL) to drive runtime business logic, scheduling decisions, workflow transitions, or state orchestration.
+
+**Red flags:** `"conditions": [...], "transitions": [...]` in JSON, metadata-driven slot generation, declarative availability rules.
+
+**Why dangerous:** Metadata-driven orchestration is accidental no-code engine construction. It makes business logic opaque, untestable, and creates framework behavior by stealth.
+
+### 4. Scheduling Drift
+
+Letting scheduling semantics (slots, availability, calendars, appointments) leak into platform core, quotas, events, or dashboard metrics.
+
+**Red flags:** `maxBookingsPerMonth` in plan limits, `booking.completed` replacing `conversion.completed`, `getBookingCount()` in `BotService`, platform-wide calendar sync.
+
+### 5. Capability Leakage
+
+Any single template's terminology or semantics becoming platform-wide. The platform must remain capability-neutral.
+
+**Red flags:** "Leads" as primary dashboard metric, funnel-specific event names, template-specific fields in universal entities.
+
+### 6. Runtime/Operational Coupling
+
+Runtime importing operational modules, or operational endpoints executing runtime business logic.
+
+**Red flags:** `import { DashboardService } from '../miniapp/...'` in template services, dashboard endpoints calling `bookingRuntimeService.confirmBooking()`.
+
+### 7. Template-Centric Platform Identity
+
+Allowing one template to define what the platform IS. The platform is universal; no template is the platform.
+
+**Red flags:** Platform marketed as "booking app," "lead funnel builder," or "CRM tool."
+
+---
+
 ## MOST IMPORTANT REMINDERS
 
 **BotGrandFather is a PLATFORM, not a FRAMEWORK.**
@@ -283,6 +333,10 @@ It IS:
 **Events are FACTS, not orchestration.**
 
 **Abstract only PROVEN REPETITION.**
+
+**Scheduling is a TEMPLATE CAPABILITY, not a PLATFORM CONCERN.**
+
+**Slots are TEMPLATE PRIMITIVES, not PLATFORM PRIMITIVES.**
 
 ---
 

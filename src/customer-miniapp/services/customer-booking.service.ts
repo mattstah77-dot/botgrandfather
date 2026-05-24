@@ -119,7 +119,21 @@ export class CustomerBookingService {
     // Mark customer as converted
     await this.customerService.updateStatus(botId, userIdNum, 'converted');
 
-    // Track analytics
+    // CANONICAL: Emit booking.created event per temporal semantics
+    await this.analyticsService.trackEvent(
+      botId,
+      'booking.created',
+      {
+        template: 'booking',
+        channel: 'miniapp',
+        serviceId,
+        date,
+        timeSlot,
+        userId: userIdNum,
+      },
+    );
+
+    // Track conversion
     await this.analyticsService.trackEvent(
       botId,
       'conversion.completed',

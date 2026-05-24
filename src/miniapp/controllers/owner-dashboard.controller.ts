@@ -1,10 +1,8 @@
-import { Controller, Get, Param, Query, Req, UseGuards, ParseIntPipe, DefaultValuePipe, UseInterceptors } from '@nestjs/common';
-import type { Request } from 'express';
+import { Controller, Get, Param, Query, UseGuards, ParseIntPipe, DefaultValuePipe } from '@nestjs/common';
 import { MiniAppAuthGuard } from '../auth/miniapp-auth.guard';
 import { BotOwnershipGuard } from '../../ownership/bot-ownership.guard';
 import { DashboardService } from '../services/dashboard.service';
 import { OwnerViewService } from '../services/owner-view.service';
-import { LeadFunnelQueryService } from '../../templates/lead-funnel/lead-funnel-query.service';
 
 /**
  * Owner Dashboard Controller — bot-specific operational endpoints.
@@ -13,6 +11,10 @@ import { LeadFunnelQueryService } from '../../templates/lead-funnel/lead-funnel-
  * These endpoints serve bot-specific operational data.
  * They are template-agnostic — the same endpoints work for lead-funnel,
  * booking, AI assistant, etc.
+ *
+ * CAPABILITY NEUTRALITY:
+ * Template-specific data comes ONLY through DashboardService + CapabilityRegistry.
+ * No direct query service injection. No template-specific branching.
  *
  * SECURITY:
  * All bot-scoped endpoints enforce ownership via BotOwnershipGuard.
@@ -24,14 +26,17 @@ export class OwnerDashboardController {
   constructor(
     private readonly dashboardService: DashboardService,
     private readonly ownerViewService: OwnerViewService,
-    private readonly leadFunnelQueryService: LeadFunnelQueryService,
   ) {}
 
   /**
    * GET /miniapp/bots/:id/overview
    *
    * Universal bot overview — works for ANY template.
-   * Returns: customers, leads, events, status breakdown.
+   * Returns: customers, interactions (template-agnostic), events, status breakdown.
+   *
+   * CAPABILITY NEUTRALITY:
+   * No template-specific metrics (leads, bookings) in response.
+   * Template-specific data available via capability-specific endpoints.
    */
   @Get(':id/overview')
   async getBotOverview(@Param('id') botId: string) {
@@ -44,7 +49,7 @@ export class OwnerDashboardController {
       stats: {
         customers: stats.customerCount,
         customersByStatus: stats.customersByStatus,
-        leads: stats.leadCount,
+        interactions: stats.customerCount, // Template-agnostic: all customers are interactions
         events: stats.eventCount,
       },
     };
@@ -54,7 +59,10 @@ export class OwnerDashboardController {
    * GET /miniapp/bots/:id/view
    *
    * Composed operational view for a bot.
-   * Includes template-specific widgets and navigation.
+   * Includes template-specific widgets and navigation from OwnerModuleRegistry.
+   *
+   * CAPABILITY NEUTRALITY:
+   * Uses generic interaction count, not template-specific metrics.
    */
   @Get(':id/view')
   async getBotView(@Param('id') botId: string) {
@@ -65,8 +73,7 @@ export class OwnerDashboardController {
       stats.template,
       {
         customerCount: stats.customerCount,
-        leadCount: stats.leadCount,
-        bookingCount: stats.bookingCount,
+        interactionCount: stats.customerCount, // Template-agnostic
         eventCount: stats.eventCount,
       },
     );
@@ -86,21 +93,6 @@ export class OwnerDashboardController {
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
   ) {
     return this.dashboardService.getBotCustomers(botId, page, limit);
-  }
-
-  /**
-   * GET /miniapp/bots/:id/leads
-   *
-   * Lead list for a bot (lead-funnel template).
-   * Template-specific data served via query service.
-   */
-  @Get(':id/leads')
-  async getBotLeads(
-    @Param('id') botId: string,
-    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
-    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
-  ) {
-    return this.leadFunnelQueryService.getBotLeads(botId, page, limit);
   }
 
   /**

@@ -153,6 +153,57 @@ await eventBus.emit('booking.createRequested', params);
 
 ---
 
+## ANTI-PATTERNS
+
+### Anti-Pattern 1: Template-Specific Core Events
+
+```typescript
+// ❌ FORBIDDEN — Template-specific events in core
+await analytics.trackEvent(botId, 'funnel.started');
+await analytics.trackEvent(botId, 'leadfunnel.converted');
+await analytics.trackEvent(botId, 'booking:created');
+
+// ✅ CORRECT — Capability-neutral events with metadata
+await analytics.trackEvent(botId, 'session.started', {
+  template: 'lead-funnel',
+  flowType: 'funnel',
+});
+await analytics.trackEvent(botId, 'conversion.completed', {
+  template: 'lead-funnel',
+});
+await analytics.trackEvent(botId, 'booking.created', {
+  template: 'booking',
+});
+```
+
+### Anti-Pattern 2: Event-Driven Orchestration
+
+```typescript
+// ❌ FORBIDDEN — Events trigger distributed workflows
+await eventBus.emit('booking.createRequested', params);
+// Handler 1: creates booking
+// Handler 2: sends notification
+// Handler 3: updates calendar
+
+// ✅ CORRECT — Explicit synchronous orchestration
+const booking = await bookingService.createBooking(params);
+await analytics.trackEvent(botId, 'booking.created', { bookingId: booking.id });
+await notificationService.sendBookingConfirmation(booking);
+```
+
+### Anti-Pattern 3: Events as Commands
+
+```typescript
+// ❌ FORBIDDEN — Events are commands
+await eventBus.emit('createBooking', { serviceId: 'consultation' });
+
+// ✅ CORRECT — Events are facts
+const booking = await bookingService.createBooking(params);
+await analytics.trackEvent(botId, 'booking.created', { bookingId: booking.id });
+```
+
+---
+
 ## VERSION HISTORY
 
 | Version | Date | Changes |

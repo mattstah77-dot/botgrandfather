@@ -12,6 +12,10 @@ export const bookingConfigSchema: ConfigSchema = {
   cancellationMessage: { type: 'string', required: true },
   ownerChatId: { type: 'string', required: true },
   timezone: { type: 'string', required: true },
+  // CANONICAL: Booking window semantics per booking-temporal-semantics.md Section 3
+  advanceBookingDays: { type: 'number', required: false },
+  minimumNoticeHours: { type: 'number', required: false },
+  cancellationWindowHours: { type: 'number', required: false },
 };
 
 /**
@@ -98,4 +102,8 @@ export const bookingDefaultConfig = {
   cancellationMessage: 'Your booking has been cancelled.',
   ownerChatId: '',
   timezone: 'UTC',
+  // CANONICAL: Booking window defaults per booking-temporal-semantics.md Section 3
+  advanceBookingDays: 30,
+  minimumNoticeHours: 2,
+  cancellationWindowHours: 24,
 };

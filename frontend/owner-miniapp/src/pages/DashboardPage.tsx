@@ -75,7 +75,7 @@ export function DashboardPage() {
       >
         <StatCard label="Bots" value={stats.totalBots} />
         <StatCard label="Customers" value={stats.totalCustomers} />
-        <StatCard label="Events" value={stats.totalInteractions} />
+        <StatCard label="Interactions" value={stats.totalInteractions} />
       </div>
 
       {/* Bots list */}
@@ -113,11 +113,24 @@ export function DashboardPage() {
                     padding: '2px 8px',
                     fontSize: '11px',
                     borderRadius: '10px',
-                    background: '#27ae60',
+                    background: bot.status === 'active' ? '#27ae60' : '#95a5a6',
                     color: '#fff',
                   }}
                 >
                   {bot.status}
+                </span>
+                <span
+                  style={{
+                    display: 'inline-block',
+                    marginLeft: '6px',
+                    padding: '2px 8px',
+                    fontSize: '11px',
+                    borderRadius: '10px',
+                    background: 'var(--tg-theme-button-color, #2481cc)',
+                    color: '#fff',
+                  }}
+                >
+                  {bot.template === 'booking' ? '📅 Booking' : bot.template === 'lead-funnel' ? '🎯 Leads' : bot.template}
                 </span>
               </span>
               <span style={{ color: 'var(--tg-theme-hint-color)', fontSize: '13px' }}>→</span>

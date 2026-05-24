@@ -61,13 +61,18 @@ export class Booking {
 
   /**
    * Booking lifecycle status.
-   * pending   — booking created, awaiting confirmation (if manual confirmation needed)
-   * confirmed — booking is active
-   * cancelled — booking was cancelled
-   * completed — appointment was fulfilled
+   * 
+   * CANONICAL: Per booking-temporal-semantics.md Section 6.
+   * - pending:   Created, awaiting confirmation (if manual confirmation needed)
+   * - confirmed: Confirmed and active
+   * - cancelled: Cancelled by customer or owner
+   * - completed: Appointment occurred (past end time)
+   * - no-show:   Customer did not attend (owner-marked)
+   * 
+   * INVARIANT: Once cancelled/completed/no-show, status cannot transition back.
    */
   @Column({ type: 'varchar', default: 'pending' })
-  status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
+  status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'no-show';
 
   @Column({ type: 'varchar', default: 'UTC' })
   timezone: string;

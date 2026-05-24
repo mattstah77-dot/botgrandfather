@@ -18,6 +18,8 @@
 | Multi-Tenant Isolation | ✅ STABLE |
 | Booking Template | ✅ IMPLEMENTED |
 | Lead Funnel Template | ✅ IMPLEMENTED |
+| Third Capability Validation | ✅ VALIDATED (Support Desk design) |
+| Contract Stabilization | ✅ COMPLETE |
 | Frontend Mini App | ❌ NOT BUILT |
 | Booking Temporal Semantics | ❌ NOT DEFINED |
 | Test Coverage | ❌ NOT IMPLEMENTED |

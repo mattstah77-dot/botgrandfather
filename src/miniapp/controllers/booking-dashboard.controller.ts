@@ -6,6 +6,7 @@ import {
   UseGuards,
   ParseIntPipe,
   DefaultValuePipe,
+  NotFoundException,
 } from '@nestjs/common';
 import { MiniAppAuthGuard } from '../auth/miniapp-auth.guard';
 import { BotOwnershipGuard } from '../../ownership/bot-ownership.guard';
@@ -31,14 +32,18 @@ export class BookingDashboardController {
    * GET /miniapp/bots/:id/bookings
    *
    * Booking list for a bot.
+   * Supports: status filter, search query, date sorting.
    */
   @Get(':id/bookings')
   async getBotBookings(
     @Param('id') botId: string,
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
+    @Query('status') status?: string,
+    @Query('search') search?: string,
+    @Query('sort') sort?: string,
   ) {
-    return this.bookingQueryService.getBotBookings(botId, page, limit);
+    return this.bookingQueryService.getBotBookings(botId, page, limit, status, search, sort);
   }
 
   /**
@@ -57,5 +62,29 @@ export class BookingDashboardController {
     // For now, return all bookings in date range
     const bookings = await this.bookingQueryService.getBotBookings(botId, 1, 100);
     return bookings;
+  }
+
+  /**
+   * GET /miniapp/bots/:id/bookings/:bookingId
+   *
+   * Single booking detail view.
+   * Includes available owner actions (operational metadata).
+   */
+  @Get(':id/bookings/:bookingId')
+  async getBookingDetail(
+    @Param('id') botId: string,
+    @Param('bookingId') bookingId: string,
+  ) {
+    const booking = await this.bookingQueryService.getBookingById(botId, bookingId);
+    if (!booking) {
+      throw new NotFoundException('Booking not found');
+    }
+
+    const availableActions = this.bookingQueryService.getBookingAvailableActions(booking.status);
+
+    return {
+      ...booking,
+      availableActions,
+    };
   }
 }

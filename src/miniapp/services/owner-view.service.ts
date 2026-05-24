@@ -66,17 +66,20 @@ export class OwnerViewService {
   /**
    * Compose a bot-specific operational view.
    *
-   * Includes template-specific widgets from OwnerModuleRegistry.
+   * CAPABILITY NEUTRALITY:
+   * Uses generic interaction metrics, NOT template-specific counts.
+   * Template-specific labels come from OwnerModuleRegistry.
    *
-   * NOTE: Metrics are generic — template-specific labels come from OwnerModuleRegistry.
+   * @param botId - Bot ID
+   * @param template - Template key (for navigation only)
+   * @param botStats - Template-agnostic metrics
    */
   composeBotView(
     botId: string,
     template: string,
     botStats: {
       customerCount: number;
-      leadCount: number;
-      bookingCount: number;
+      interactionCount: number;
       eventCount: number;
     },
   ): OwnerView {
@@ -84,7 +87,7 @@ export class OwnerViewService {
 
     const widgets: DashboardWidget[] = [
       this.createMetricWidget('bot-customers', 'Customers', botStats.customerCount),
-      this.createMetricWidget('bot-interactions', 'Interactions', botStats.leadCount + botStats.bookingCount),
+      this.createMetricWidget('bot-interactions', 'Interactions', botStats.interactionCount),
       this.createMetricWidget('bot-events', 'Events', botStats.eventCount),
     ];
 

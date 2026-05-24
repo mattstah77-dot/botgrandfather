@@ -97,6 +97,33 @@ interface DashboardStats {
 
 ---
 
+## ACTION CONTRACT REFERENCE
+
+Actions are operational descriptors, not behavior metadata.
+
+See: `contracts/action-contracts.md` for full action contract definition.
+
+### Quick Reference
+
+```typescript
+interface CapabilityAction {
+  id: string;
+  label: string;
+  type: 'navigate' | 'lifecycle';
+  route?: string;
+  endpoint?: { method: 'POST' | 'DELETE' | 'PATCH'; path: string; };
+  icon?: string;
+}
+```
+
+### Rules
+
+1. Actions are navigation descriptors only.
+2. Backend decides availability. Frontend renders.
+3. No behavior, conditions, or orchestration in metadata.
+
+---
+
 ## VERSION HISTORY
 
 | Version | Date | Changes |

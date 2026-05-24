@@ -69,6 +69,13 @@ export class NavigationService {
    *
    * Looks up OwnerModuleRegistry for the bot's template
    * and returns its navigation sections.
+   *
+   * CAPABILITY ROUTING:
+   * Routes use explicit capability namespace:
+   * /bots/:botId/capabilities/:capabilityId
+   *
+   * This avoids conflicts with universal routes (e.g., /customers)
+   * and enables generic capability rendering on the frontend.
    */
   getTemplateNavigation(template: string): NavigationItem[] {
     const module = getOwnerModule(template);
@@ -80,7 +87,7 @@ export class NavigationService {
     return module.navigation.map((section) => ({
       key: section.id,
       label: section.label,
-      route: `/bots/:botId${section.route}`,
+      route: `/bots/:botId/capabilities/${section.id}`,
       icon: section.icon,
       source: 'template' as const,
       template: module.template,

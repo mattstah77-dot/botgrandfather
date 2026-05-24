@@ -175,6 +175,28 @@ const html = templateService.renderFromMetadata(data);
 
 ---
 
+## METADATA CREEP DETECTION
+
+Metadata creep is the gradual expansion of metadata from "UI structure description" to "business logic definition."
+
+See: `anti-patterns/metadata-creep.md` for full detection guide.
+
+### Quick Detection
+
+| Pattern | Status |
+|---------|--------|
+| `conditions` array in metadata | ❌ CREEP |
+| `transitions` array in metadata | ❌ CREEP |
+| `validation` object in metadata | ❌ CREEP |
+| `onClick`/`handler` in metadata | ❌ CREEP |
+| `workflow`/`steps` in metadata | ❌ CREEP |
+| `children` arrays in metadata | ❌ CREEP |
+| `id`, `label`, `route` in metadata | ✅ SAFE |
+| `type: 'text' \| 'textarea'` in metadata | ✅ SAFE |
+| `icon?: string` in metadata | ✅ SAFE |
+
+---
+
 ## INVARIANTS
 
 > **Invariant MD.1:** Metadata drives operational UI rendering, NOT business logic execution.
@@ -188,6 +210,12 @@ const html = templateService.renderFromMetadata(data);
 > **Invariant MD.5:** Events are facts. Actions are code. Metadata must not bridge them.
 
 > **Invariant MD.6:** Frontend renders metadata. Backend computes data.
+
+> **Invariant MD.7:** Metadata does NOT contain conditions, transitions, validation, or orchestration.
+
+> **Invariant MD.8:** Metadata does NOT recurse. No `children`, `nodes`, or `tree` structures.
+
+> **Invariant MD.9:** Metadata does NOT contain behavior. No `onClick`, `handler`, or `workflow`.
 
 ---
 
