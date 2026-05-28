@@ -60,7 +60,7 @@
 | Dashboard changes | `architecture/dashboard-system.md`, `contracts/capability-contracts.md` |
 | Booking Engine | `contracts/booking-temporal-semantics.md`, `contracts/temporal-truth-contracts.md`, `contracts/slot-reality-contract.md`, `contracts/occupancy-contracts.md` |
 | Support Desk | `contracts/support-desk-semantics.md`, `contracts/actor-semantics-contract.md` |
-| Operational Surface | `contracts/projection-authority-boundaries.md`, `contracts/projection-ownership-semantics.md`, `contracts/projection-lifecycle-semantics.md` |
+| Operational Surface | `contracts/projection-authority-boundaries.md`, `contracts/projection-ownership-semantics.md`, `contracts/projection-lifecycle-semantics.md`, `contracts/projection-composition-rules.md`, `contracts/actor-projection-semantics.md`, `contracts/dashboard-projection-semantics.md` |
 | Settings | `contracts/settings-contracts.md`, `philosophy/settings-philosophy.md` |
 | Actions | `contracts/action-contracts.md`, `CONTRACT_STABILIZATION_REPORT.md` |
 
@@ -76,6 +76,8 @@
 | `anti-patterns/temporal-automation-drift.md` | Prevent temporal automation |
 | `anti-patterns/forbidden-optimization-patterns.md` | Computation anti-patterns |
 | `anti-patterns/forbidden-operational-patterns.md` | Operational orchestration anti-patterns |
+| `anti-patterns/projection-anti-patterns.md` | Projection-specific anti-patterns |
+| `anti-patterns/read-model-anti-patterns.md` | Read model consumption anti-patterns |
 | `checklists/temporal-drift-detection-checklist.md` | 34-point drift detection checklist |
 
 ### I Need Terminology Clarity
@@ -126,6 +128,18 @@
 - `contracts/actor-semantics-contract.md`
 - `contracts/operational-visibility-boundaries.md`
 - `contracts/idempotency-contracts.md`
+- `contracts/projection-taxonomy.md`
+- `contracts/projection-composition-rules.md`
+- `contracts/actor-projection-semantics.md`
+- `contracts/projection-freshness-model.md`
+- `contracts/projection-isolation-rules.md`
+- `contracts/dashboard-projection-semantics.md`
+- `contracts/projection-evolution-boundaries.md`
+- `contracts/operational-read-model-taxonomy.md`
+- `contracts/actor-consumption-boundaries.md`
+- `contracts/dashboard-consumption-contract.md`
+- `contracts/projection-rendering-contract.md`
+- `contracts/operational-freshness-contract.md`
 
 ### Tier 3 — Current Platform State
 
@@ -134,6 +148,8 @@
 - `OPERATIONAL_UI_DRIFT_AUDIT.md`
 - `CONTRACT_STABILIZATION_REPORT.md`
 - `THIRD_CAPABILITY_VALIDATION_REPORT.md`
+- `audits/aggregation-pressure-validation.md`
+- `audits/operational-gravity-revalidation.md`
 
 ### Tier 4 — Architecture Descriptions
 
@@ -184,4 +200,14 @@
 
 ---
 
-**Version 2.0 — 2026-05-23**
+**Version 2.1 — 2026-05-23**
+
+---
+
+## UNIT HISTORY
+
+| Unit | Date | Status |
+|------|------|--------|
+| PRE-UNIT-04 | 2026-05-23 | ✅ Complete |
+| UNIT-04 | 2026-05-23 | ✅ Complete |
+| UNIT-05 | 2026-05-23 | ✅ Complete |
