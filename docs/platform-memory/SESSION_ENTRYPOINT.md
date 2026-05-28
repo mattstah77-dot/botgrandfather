@@ -150,6 +150,11 @@ It IS:
 | Multi-capability features | `philosophy/ecosystem-boundaries.md`, `operational/multi-capability-visibility.md` |
 | Customer layer changes | `customer/customer-operational-philosophy.md` |
 | Event system changes | `contracts/event-contracts.md`, `philosophy/operational-feed-philosophy.md` |
+| Runtime reliability | `philosophy/runtime-reliability-philosophy.md`, `audits/runtime-failure-matrix.md` |
+| Idempotency changes | `contracts/idempotency-contracts.md`, `audits/transaction-boundary-audit.md` |
+| Concurrency concerns | `audits/concurrency-race-analysis.md` |
+| Security review | `audits/operational-security-audit.md` |
+| Production readiness | `audits/production-readiness-classification.md` |
 
 ### Phase 3 — Reference (As Needed)
 
@@ -224,6 +229,13 @@ It IS:
 - ❌ Workflow engines
 - ❌ Event-driven automation
 - ❌ Universal state machines
+- ❌ Distributed locking systems
+- ❌ Generic retry frameworks
+- ❌ Circuit breakers
+- ❌ Saga patterns
+- ❌ CQRS
+- ❌ Orchestration engines
+- ❌ Complex monitoring infrastructure
 
 **Safe:**
 - ✅ Booking temporal semantics

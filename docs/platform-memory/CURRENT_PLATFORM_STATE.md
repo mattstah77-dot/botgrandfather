@@ -29,9 +29,20 @@
 | Dashboard scalability | ✅ VALIDATED (10+ capabilities safe) |
 | Event taxonomy hardening | ✅ COMPLETE (v1.1 cross-capability rules) |
 | Forbidden drift patterns | ✅ DOCUMENTED (10 patterns + alternatives) |
+| Runtime failure surface | ✅ AUDITED (25 failure points, 4 critical findings) |
+| Idempotency contracts | ✅ DEFINED (invariants + capability guarantees) |
+| Transaction boundaries | ✅ AUDITED (strong/eventual classification) |
+| Concurrency safety | ✅ VALIDATED (10 races, 0 HIGH, DB containment) |
+| Runtime observability | ✅ DEFINED (logging + error taxonomy) |
+| Recovery & restart safety | ✅ AUDITED (state survivability matrix) |
+| Lifecycle integrity | ✅ VALIDATED (all 3 capabilities PASS) |
+| Operational security | ✅ AUDITED (17 attacks, 1 gap: rate limiting) |
+| Production readiness | ✅ CLASSIFIED (6.42/10, ACCEPTABLE) |
+| Reliability philosophy | ✅ DEFINED (8 principles, 6 forbidden directions) |
 | Frontend Mini App | ⚠️ PARTIAL (Booking + Support views) |
 | Booking Temporal Semantics | ❌ NOT DEFINED |
 | Test Coverage | ❌ NOT IMPLEMENTED |
+| Rate Limiting | ❌ NOT IMPLEMENTED |
 
 ---
 
