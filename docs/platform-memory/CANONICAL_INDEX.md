@@ -140,6 +140,11 @@
 - `contracts/dashboard-consumption-contract.md`
 - `contracts/projection-rendering-contract.md`
 - `contracts/operational-freshness-contract.md`
+- `contracts/temporal-truth-pressure-contract.md`
+- `contracts/write-time-validation-contracts.md`
+- `contracts/stale-projection-semantics.md`
+- `contracts/telegram-runtime-reliability.md`
+- `contracts/reliability-boundaries.md`
 
 ### Tier 3 — Current Platform State
 
@@ -150,6 +155,9 @@
 - `THIRD_CAPABILITY_VALIDATION_REPORT.md`
 - `audits/aggregation-pressure-validation.md`
 - `audits/operational-gravity-revalidation.md`
+- `audits/booking-concurrency-audit.md`
+- `audits/infrastructure-drift-containment.md`
+- `audits/runtime-reality-audit.md`
 
 ### Tier 4 — Architecture Descriptions
 
@@ -200,7 +208,7 @@
 
 ---
 
-**Version 2.1 — 2026-05-23**
+**Version 2.2 — 2026-05-23**
 
 ---
 
@@ -211,3 +219,4 @@
 | PRE-UNIT-04 | 2026-05-23 | ✅ Complete |
 | UNIT-04 | 2026-05-23 | ✅ Complete |
 | UNIT-05 | 2026-05-23 | ✅ Complete |
+| UNIT-06 | 2026-05-23 | ✅ Complete |
