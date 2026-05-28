@@ -20,6 +20,7 @@ import { SupportRuntimeService } from './support/support-runtime.service';
 import { SupportQueryService } from './support/support-query.service';
 import { Ticket } from './support/entities/ticket.entity';
 import { TicketMessage } from './support/entities/ticket-message.entity';
+import { Customer } from '../customer/entities/customer.entity';
 
 @Global()
 @Module({
@@ -27,7 +28,7 @@ import { TicketMessage } from './support/entities/ticket-message.entity';
     TelegramModule,
     CustomerModule,
     AnalyticsModule,
-    TypeOrmModule.forFeature([UserState, Bot, Lead, Booking, ProviderAvailability, Ticket, TicketMessage]),
+    TypeOrmModule.forFeature([UserState, Bot, Lead, Booking, ProviderAvailability, Ticket, TicketMessage, Customer]),
   ],
   providers: [
     TemplateFactory,

@@ -6,39 +6,33 @@ import { SupportLifecycleController } from './controllers/support-lifecycle.cont
 import { SupportDashboardController } from './controllers/support-dashboard.controller';
 import { Ticket } from './entities/ticket.entity';
 import { TicketMessage } from './entities/ticket-message.entity';
+import { Bot } from '../../bot/entities/bot.entity';
 import { Customer } from '../../customer/entities/customer.entity';
-import { TelegramModule } from '../../telegram/telegram.module';
-import { CustomerModule } from '../../customer/customer.module';
-import { AnalyticsModule } from '../../analytics/analytics.module';
-import { MiniAppAuthModule } from '../../miniapp/auth/miniapp-auth.module';
-import { OwnershipModule } from '../../ownership/ownership.module';
 
 /**
- * Support Desk Template Module — NestJS module for support desk template.
+ * Support Module — Support Desk template.
  *
- * ARCHITECTURAL PRINCIPLE:
- * This module is self-contained. It imports only universal platform modules.
- * No cross-template imports. No operational layer imports.
+ * BOUNDARY:
+ * - Support is a TEMPLATE, not a runtime framework.
+ * - SupportRuntimeService is used by TemplateFactory for Telegram flow.
+ * - SupportQueryService is used by MiniApp for operational visibility.
  *
- * NOTE: Runtime and Query services are separated.
+ * SEPARATION:
+ * - Runtime and Query services are separated.
  * - SupportRuntimeService: runtime conversation flow (used by TemplateFactory)
- * - SupportQueryService: operational data access (used by MiniappModule)
+ * - SupportQueryService: operational data access (used by MiniApp)
  *
  * DI NOTE: TypeOrmModule.forFeature([Customer]) is required for
  * SupportQueryService to read customer info for ticket lists.
+ * Customer is a READ-ONLY reference, not a dependency on CustomerModule.
+ * Support does NOT orchestrate CustomerModule.
  *
  * AUTH NOTE: MiniAppAuthModule and OwnershipModule are imported for
- * SupportLifecycleController and SupportDashboardController.
- * This is a cross-cutting security concern, NOT an operational layer import.
+ * owner authentication and authorization.
  */
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Ticket, TicketMessage, Customer]),
-    TelegramModule,
-    CustomerModule,
-    AnalyticsModule,
-    MiniAppAuthModule,
-    OwnershipModule,
+    TypeOrmModule.forFeature([Ticket, TicketMessage, Bot, Customer]),
   ],
   controllers: [SupportLifecycleController, SupportDashboardController],
   providers: [SupportRuntimeService, SupportQueryService],
