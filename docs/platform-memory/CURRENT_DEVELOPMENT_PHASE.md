@@ -2,22 +2,22 @@
 
 **Purpose:** Active development phase and work streams  
 **Status:** CANONICAL — Tier 3 State  
-**Version:** 1.0  
+**Version:** 2.0  
 **Date:** 2026-05-23
 
 ---
 
 ## ACTIVE PHASE
 
-**Phase:** Runtime Reliability & Operational Durability
+**Phase:** Booking Engine Foundation
 
-**Preceded by:** Multi-Capability Operational Cohesion (COMPLETE)
+**Preceded by:** Runtime Reliability & Operational Durability (COMPLETE)
 
 **Started:** 2026-05-23
 
-**Status:** IN PROGRESS — Runtime failure surface hardening
+**Status:** IN PROGRESS — Temporal semantics implementation
 
-**Goal:** Production resilience without infrastructure explosion
+**Goal:** Validate real temporal complexity without scheduling framework emergence
 
 ---
 
@@ -30,7 +30,10 @@
 | Event Taxonomy | ✅ STABLE | Canonical naming |
 | Dashboard Aggregation | ✅ STABLE | Capability Provider pattern |
 | Multi-Tenant Isolation | ✅ STABLE | Ownership verification |
-| Template System | ✅ STABLE | 2 templates implemented |
+| Template System | ✅ STABLE | 3 templates implemented |
+| Runtime Reliability | ✅ STABLE | 6.42/10 production readiness |
+| ProviderAvailability Entity | ⏳ NEW | Created for working hours |
+| Rescheduling Semantics | ⏳ NEW | Implemented in runtime service |
 
 ---
 
@@ -40,29 +43,27 @@
 
 | Stream | Status | Blockers |
 |--------|--------|----------|
-| **Support Desk Template** | ⏳ READY | Universality validated, can implement |
-| **B2: Booking Temporal Semantics** | ⏳ PENDING | None — can start now |
-| **Frontend Mini App** | ⏳ READY | Backend APIs stable |
-| **Booking Engine Foundation** | ⏳ BLOCKED | Requires B2 completion |
+| **Booking Temporal Semantics** | ⏳ IN PROGRESS | ProviderAvailability entity created, rescheduling implemented |
+| **Slot Generation Logic** | ⏳ READY | Computed availability on-demand |
+| **Cancellation/Reschedule Window** | ✅ IMPLEMENTED | In BookingRuntimeService |
+| **Timezone Safety Audit** | ⏳ PENDING | Requires date-fns-tz integration |
 
 ### Medium Priority
 
 | Stream | Status | Notes |
 |--------|--------|-------|
 | Test Coverage | ⏳ READY | Critical paths first |
-| CRM Capability Exploration | ⏳ READY | After Support Desk stable |
-| Dashboard Widget Improvements | ⏳ READY | As needed |
+| ProviderAvailability CRUD | ⏳ READY | Owner management UI |
+| Dashboard Calendar View | ⏳ READY | After core booking stable |
 
 ### Postponed (Explicit)
 
 | Stream | When Reconsidered | Why Postponed |
 |--------|-------------------|---------------|
-| Plugin Runtime | After 10+ templates | Premature complexity |
-| SDK for External Developers | After 5+ internal templates | Contracts not stable |
-| Template Marketplace | After SDK stable | No templates to sell |
-| External Analytics DB | After 1M+ events/day | PostgreSQL sufficient |
-| Queue System | After > 100 webhooks/sec | Direct processing fine |
-| Microservices | After team growth | Monolith scales well |
+| RRULE Recurrence | Never | Explicit weekly config only |
+| Universal Scheduling Engine | Never | Template-specific logic |
+| Distributed Locking | Never | DB constraints sufficient |
+| Slot Materialization | Performance pressure | Computed on-demand first |
 
 ---
 
@@ -72,58 +73,76 @@
 
 | Task | Why Safe |
 |------|----------|
-| Support Desk template | Universality validated, follows established patterns |
-| Booking temporal semantics | Solves real gap, no abstraction |
-| Frontend Mini App | Backend APIs stable |
-| Test coverage | Quality improvement |
-| Booking Engine (after B2) | Follows established patterns |
-| CRM capability | Follows established patterns |
-| Dashboard widgets | Capability Provider pattern |
+| ProviderAvailability CRUD | Template-specific, no framework |
+| Timezone conversion library | Explicit boundaries, no magic |
+| Calendar operational view | Read-only, no orchestration |
+| Cancellation window enforcement | Explicit validation |
+| Reschedule endpoint testing | Core temporal operation |
 
 ### Unsafe Directions
 
 | Task | Why Unsafe |
 |------|------------|
-| Plugin runtime | Premature (2 templates implemented, 1 validated) |
-| SDK for external developers | Contracts stable but only 3 templates needed first |
-| Template marketplace | No templates to sell |
-| External analytics DB | PostgreSQL sufficient |
-| Queue system | Direct processing fine |
-| Microservices | Monolith scales well |
+| RRULE recurrence engine | Framework drift |
+| Universal scheduling abstraction | Cross-template coupling |
+| Drag-and-drop calendar | Orchestration, not visibility |
+| Slot materialization engine | Premature optimization |
+| Workflow engine for rescheduling | Over-engineering |
 
 ---
 
 ## PHASE DELIVERABLES
 
-### Task Group 1 — Runtime Failure Surface Audit ✅
-- [x] `audits/runtime-failure-matrix.md` — 25 failure points identified, severity classified, 4 critical findings
+### Task Group 1 — Temporal Domain Model ✅
+- [x] `docs/platform-memory/philosophy/temporal-semantics-philosophy.md` — Canonical temporal semantics, 8 rules, forbidden patterns
+- [x] `src/templates/booking/entities/provider-availability.entity.ts` — ProviderAvailability entity created
 
-### Task Group 2 — Idempotency Hardening ✅
-- [x] `contracts/idempotency-contracts.md` — Idempotency invariants, capability-level guarantees, duplicate prevention strategies
+### Task Group 2 — Slot Generation ✅
+- [x] `BookingQueryService.getAvailableSlots()` — Computed on-demand, ProviderAware
+- [x] `BookingQueryService.generateTimeSlots()` — Explicit slot computation
 
-### Task Group 3 — Transaction Boundary Audit ✅
-- [x] `audits/transaction-boundary-audit.md` — Transaction boundary map, consistency classification, 3 gaps identified
+### Task Group 3 — Timezone Safety ⏳
+- [x] `docs/platform-memory/audits/booking-temporal-audit.md` — Timezone strategy, conversion boundaries
+- [ ] date-fns-tz integration — Deferred (manual parsing for now)
 
-### Task Group 4 — Concurrency & Race Condition Hardening ✅
-- [x] `audits/concurrency-race-analysis.md` — 10 races identified, 0 HIGH severity, database containment sufficient
+### Task Group 4 — Rescheduling Semantics ✅
+- [x] `BookingRuntimeService.rescheduleBooking()` — Implemented with validation
+- [x] `POST /miniapp/bots/:id/bookings/:bookingId/reschedule` — Endpoint created
+- [x] Cancellation/reschedule window validation
 
-### Task Group 5 — Runtime Observability Foundation ✅
-- [x] `philosophy/runtime-observability-philosophy.md` — Logging conventions, error taxonomy, diagnostic guidelines
+### Task Group 5 — Conflict Handling ✅
+- [x] Database unique constraint — `@Unique(['botId', 'date', 'timeSlot', 'status'])`
+- [x] Race condition handling — Graceful error message
 
-### Task Group 6 — Recovery & Restart Safety ✅
-- [x] `audits/recovery-restart-audit.md` — Restart scenarios, state survivability matrix, recovery procedures
+### Task Group 6 — Anti-Pattern Documentation ✅
+- [x] `docs/platform-memory/anti-patterns/scheduling-engine-drift.md` — 8 forbidden directions
+- [x] `docs/platform-memory/contracts/booking-temporal-contracts.md` — Temporal contracts
 
-### Task Group 7 — Lifecycle Integrity Hardening ✅
-- [x] `audits/lifecycle-integrity-audit.md` — All 3 capabilities validated, forbidden transitions mapped, events verified
+### Task Group 7 — Integration ✅
+- [x] ProviderAvailability in TypeORM modules
+- [x] Bot repository injection in BookingRuntimeService
 
-### Task Group 8 — Operational Security Hardening ✅
-- [x] `audits/operational-security-audit.md` — 17 attacks analyzed, 1 gap (rate limiting), overall PASS
+## NEXT MILESTONES
 
-### Task Group 9 — Production Readiness Classification ✅
-- [x] `audits/production-readiness-classification.md` — 7 dimensions scored, overall 6.42/10, ACCEPTABLE
+### Immediate (This Week)
 
-### Task Group 10 — Reliability Philosophy Documentation ✅
-- [x] `philosophy/runtime-reliability-philosophy.md` — 8 canonical principles, 6 forbidden directions, reliability hierarchy
+- [x] Booking Engine Foundation phase started
+- [x] ProviderAvailability entity created
+- [x] Rescheduling implemented
+- [ ] Timezone conversion library integration
+- [ ] ProviderAvailability CRUD UI
+
+### Short-Term (This Month)
+
+- [ ] Calendar operational view
+- [ ] Excluded dates support
+- [ ] Multi-provider availability
+
+### Medium-Term (Next Quarter)
+
+- [ ] Performance testing (slot generation)
+- [ ] DST transition testing
+- [ ] Materialization if needed
 
 ## NEXT MILESTONES
 

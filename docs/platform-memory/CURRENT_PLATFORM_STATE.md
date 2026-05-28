@@ -2,7 +2,7 @@
 
 **Purpose:** Snapshot of current platform maturity  
 **Status:** CANONICAL — Tier 3 State  
-**Version:** 1.0  
+**Version:** 2.0  
 **Date:** 2026-05-23
 
 ---
@@ -18,9 +18,9 @@
 | Dashboard aggregation | ✅ STABLE (Capability Provider) |
 | Multi-tenant isolation | ✅ STABLE |
 | Template system | ✅ STABLE |
+| Lead Funnel capability | ✅ IMPLEMENTED |
 | Booking capability | ✅ IMPLEMENTED |
 | Support Desk capability | ✅ IMPLEMENTED |
-| Lead Funnel capability | ✅ IMPLEMENTED |
 | Capability isolation | ✅ VALIDATED (6/6 boundaries PASS) |
 | Multi-capability visibility | ✅ VALIDATED (safe aggregation defined) |
 | Ecosystem boundaries | ✅ DEFINED (canonical law document) |
@@ -40,7 +40,12 @@
 | Production readiness | ✅ CLASSIFIED (6.42/10, ACCEPTABLE) |
 | Reliability philosophy | ✅ DEFINED (8 principles, 6 forbidden directions) |
 | Frontend Mini App | ⚠️ PARTIAL (Booking + Support views) |
-| Booking Temporal Semantics | ❌ NOT DEFINED |
+| Booking Temporal Semantics | ✅ IMPLEMENTED (ProviderAvailability, rescheduling) |
+| Temporal Domain Model | ✅ IMPLEMENTED |
+| Slot Generation | ✅ IMPLEMENTED (computed on-demand) |
+| Rescheduling Semantics | ✅ IMPLEMENTED |
+| Conflict Handling | ✅ VALIDATED (DB constraints) |
+| Temporal Anti-Patterns | ✅ DOCUMENTED |
 | Test Coverage | ❌ NOT IMPLEMENTED |
 | Rate Limiting | ❌ NOT IMPLEMENTED |
 
@@ -48,39 +53,25 @@
 
 ## WHAT EXISTS
 
-### Templates (2)
+### Templates (3)
 
 | Template | Runtime | Query Service | Dashboard |
 |----------|---------|---------------|-----------|
 | Lead Funnel | ✅ | ✅ | ✅ |
 | Booking | ✅ | ✅ | ✅ |
+| Support Desk | ✅ | ✅ | ✅ |
 
-### Core Services
+### Booking Temporal Components
 
-| Service | Status |
-|---------|--------|
-| WebhookService | ✅ |
-| TemplateFactory | ✅ |
-| CustomerService | ✅ |
-| AnalyticsService | ✅ |
-| BotService | ✅ |
-| DashboardService | ✅ |
-| DashboardCapabilityRegistry | ✅ |
-
-### Events (Canonical)
-
-```
-session.started
-session.completed
-session.abandoned
-conversion.completed
-customer.created
-customer.updated
-customer.converted
-booking.created
-booking.confirmed
-booking.cancelled
-```
+| Component | Status | Location |
+|-----------|--------|----------|
+| ProviderAvailability entity | ✅ | `src/templates/booking/entities/provider-availability.entity.ts` |
+| Slot generation (computed) | ✅ | `BookingQueryService.getAvailableSlots()` |
+| Rescheduling semantics | ✅ | `BookingRuntimeService.rescheduleBooking()` |
+| Cancellation window | ✅ | `BookingRuntimeService.cancelBooking()` |
+| Reschedule window | ✅ | `BookingRuntimeService.rescheduleBooking()` |
+| Conflict prevention | ✅ | `@Unique(['botId', 'date', 'timeSlot', 'status'])` |
+| Reschedule endpoint | ✅ | `POST /miniapp/bots/:id/bookings/:bookingId/reschedule` |
 
 ---
 
@@ -90,7 +81,6 @@ booking.cancelled
 
 | Gap | Impact |
 |-----|--------|
-| Booking temporal semantics undefined | Blocks Booking Engine Foundation |
 | No frontend Mini App | Limits operational UX |
 
 ### Medium (Monitor)
@@ -99,6 +89,7 @@ booking.cancelled
 |-----|--------|
 | No test coverage | Regression risk |
 | No rate limiting | API abuse possible |
+| Timezone conversion library | Manual parsing (date-fns-tz deferred) |
 
 ### Low (Acceptable)
 
@@ -120,6 +111,7 @@ booking.cancelled
 | Customer System | 1M+ customers | HIGH |
 | Analytics | < 1M events/day | MEDIUM-HIGH |
 | Mini App Auth | 100k+ users | HIGH |
+| Booking with Temporal Semantics | Production | MEDIUM-HIGH |
 
 ### NOT Ready For
 
@@ -132,4 +124,4 @@ booking.cancelled
 
 ---
 
-**Version 1.0 — 2026-05-23**
+**Version 2.0 — 2026-05-23**

@@ -8,6 +8,7 @@ import { UserState } from '../bot/entities/user-state.entity';
 import { Bot } from '../bot/entities/bot.entity';
 import { Lead } from '../bot/entities/lead.entity';
 import { Booking } from './booking/entities/booking.entity';
+import { ProviderAvailability } from './booking/entities/provider-availability.entity';
 import { LeadFunnelService } from './lead-funnel/lead-funnel.service';
 import { LeadFunnelQueryService } from './lead-funnel/lead-funnel-query.service';
 import { Template1Service } from './template1/template1.service';
@@ -26,7 +27,7 @@ import { TicketMessage } from './support/entities/ticket-message.entity';
     TelegramModule,
     CustomerModule,
     AnalyticsModule,
-    TypeOrmModule.forFeature([UserState, Bot, Lead, Booking, Ticket, TicketMessage]),
+    TypeOrmModule.forFeature([UserState, Bot, Lead, Booking, ProviderAvailability, Ticket, TicketMessage]),
   ],
   providers: [
     TemplateFactory,

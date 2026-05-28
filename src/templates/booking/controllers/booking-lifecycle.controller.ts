@@ -140,4 +140,37 @@ export class BookingLifecycleController {
       );
     }
   }
+
+  /**
+   * POST /miniapp/bots/:id/bookings/:bookingId/reschedule
+   *
+   * Reschedule a booking.
+   * Allowed: pending → pending (new time), confirmed → confirmed (new time)
+   */
+  @Post(':id/bookings/:bookingId/reschedule')
+  async rescheduleBooking(
+    @Param('id') botId: string,
+    @Param('bookingId') bookingId: string,
+    @Body() body: { date: string; time: string },
+  ) {
+    try {
+      const { date, time } = body;
+
+      if (!date || !time) {
+        throw new BadRequestException('Date and time are required');
+      }
+
+      const booking = await this.bookingRuntimeService.rescheduleBooking(
+        botId,
+        bookingId,
+        date,
+        time,
+      );
+      return { success: true, booking };
+    } catch (error) {
+      throw new BadRequestException(
+        (error as Error).message || 'Failed to reschedule booking',
+      );
+    }
+  }
 }

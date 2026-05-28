@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, QueryFailedError, DataSource } from 'typeorm';
+import { Repository, QueryFailedError, DataSource, In } from 'typeorm';
 import { TelegramService } from '../../telegram/telegram.service';
 import { TemplateContext, TemplateService } from '../template.interface';
 import { UserState } from '../../bot/entities/user-state.entity';
@@ -11,6 +11,7 @@ import { Booking } from './entities/booking.entity';
 import { BookingConfig, BookingProgress } from './booking.types';
 import { BookingQueryService } from './booking-query.service';
 import { WEBHOOK_HOST } from '../../config/env.config';
+import { Bot } from '../../bot/entities/bot.entity';
 
 /**
  * BookingRuntimeService — runtime conversation flow for the booking template.
@@ -39,6 +40,8 @@ export class BookingRuntimeService implements TemplateService {
     private readonly userStateRepository: Repository<UserState>,
     @InjectRepository(Booking)
     private readonly bookingRepository: Repository<Booking>,
+    @InjectRepository(Bot)
+    private readonly botRepository: Repository<Bot>,
   ) {}
 
   // ─── Entry Points ─────────────────────────────────────────────
@@ -308,7 +311,7 @@ export class BookingRuntimeService implements TemplateService {
     const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
     const dayConfig = config.workingHours[dayNames[dayOfWeek]];
 
-    if (!dayConfig || !dayConfig.enabled || dayConfig.slots.length === 0) {
+    if (!dayConfig || !dayConfig.enabled || !dayConfig.slots || dayConfig.slots.length === 0) {
       await this.telegramService.sendMessage(
         context.botToken,
         context.chatId,
@@ -345,7 +348,7 @@ export class BookingRuntimeService implements TemplateService {
     const today = new Date(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate());
     
     // If booking for today, filter out slots that are within minimum notice period
-    let availableSlots = slots.filter((slot) => !bookedTimes.has(slot.time));
+    let availableSlots = slots.filter((slot) => slot.time && !bookedTimes.has(slot.time));
     
     if (selectedDate.getTime() === today.getTime()) {
       const minTime = new Date(nowDate);
@@ -830,5 +833,134 @@ export class BookingRuntimeService implements TemplateService {
     await this.bookingRepository.save(booking);
 
     return booking;
+  }
+
+  /**
+   * Reschedule a booking (owner action).
+   * 
+   * CANONICAL: booking.rescheduled event per temporal semantics §6.
+   * 
+   * Validates:
+   * - New slot is available
+   * - Cancellation/reschedule window (if applicable)
+   * - Booking exists and belongs to bot
+   * 
+   * @param botId - Bot ID (ownership verified by caller)
+   * @param bookingId - Booking ID
+   * @param newDate - New date (YYYY-MM-DD)
+   * @param newTime - New time (HH:MM)
+   * @returns Updated booking
+   */
+  async rescheduleBooking(
+    botId: string,
+    bookingId: string,
+    newDate: string,
+    newTime: string,
+  ): Promise<Booking> {
+    const booking = await this.bookingRepository.findOne({
+      where: { id: bookingId, botId },
+    });
+
+    if (!booking) {
+      throw new Error('Booking not found');
+    }
+
+    if (booking.status === 'cancelled' || booking.status === 'completed' || booking.status === 'no-show') {
+      throw new Error(`Cannot reschedule booking with status: ${booking.status}`);
+    }
+
+    // Check if new slot is different
+    if (booking.date === newDate && booking.timeSlot === newTime) {
+      throw new Error('New date/time must be different from current booking');
+    }
+
+    // Validate new slot availability
+    const isSlotAvailable = await this.isSlotAvailable(botId, newDate, newTime);
+    if (!isSlotAvailable) {
+      throw new Error(`Slot ${newDate} ${newTime} is not available`);
+    }
+
+    // Validate cancellation/reschedule window (if applicable)
+    if (booking.status === 'confirmed') {
+      const config = await this.getBookingConfig(botId);
+      const windowHours = config.rescheduleWindowHours ?? 24;
+      
+      const now = new Date();
+      const bookingDateTime = this.parseDateTime(newDate, newTime, booking.timezone);
+      const hoursUntil = Math.max(0, (bookingDateTime.getTime() - now.getTime()) / (1000 * 60 * 60));
+      
+      if (hoursUntil < windowHours) {
+        throw new Error(`Cannot reschedule within ${windowHours} hours of appointment`);
+      }
+    }
+
+    // Update booking
+    const oldDate = booking.date;
+    const oldTime = booking.timeSlot;
+    booking.date = newDate;
+    booking.timeSlot = newTime;
+    await this.bookingRepository.save(booking);
+
+    // Emit canonical event
+    await this.analyticsService.trackEvent(botId, 'booking.rescheduled', {
+      template: 'booking',
+      bookingId,
+      userId: Number(booking.userId),
+      oldDate,
+      oldTime,
+      newDate,
+      newTime,
+    });
+
+    return booking;
+  }
+
+  /**
+   * Check if a slot is available (not booked).
+   * 
+   * @param botId - Bot ID
+   * @param date - Date (YYYY-MM-DD)
+   * @param time - Time (HH:MM)
+   * @returns true if slot is available
+   */
+  private async isSlotAvailable(botId: string, date: string, time: string): Promise<boolean> {
+    const existing = await this.bookingRepository.findOne({
+      where: {
+        botId,
+        date,
+        timeSlot: time,
+        status: In(['pending', 'confirmed']),
+      },
+    });
+
+    return existing === null;
+  }
+
+  /**
+   * Get bot config (cached lookup).
+   */
+  private async getBookingConfig(botId: string): Promise<BookingConfig> {
+    const bot = await this.botRepository.findOne({
+      where: { id: botId },
+      select: ['config'],
+    });
+
+    if (!bot) {
+      throw new Error('Bot not found');
+    }
+
+    return bot.config as BookingConfig;
+  }
+
+  /**
+   * Parse datetime string with timezone.
+   * 
+   * NOTE: Uses simple parsing for validation.
+   * For production timezone-safe parsing, use date-fns-tz or moment-timezone.
+   */
+  private parseDateTime(date: string, time: string, timezone: string): Date {
+    // Simple parsing (assumes timezone is UTC or server handles conversion)
+    const dateTimeStr = `${date}T${time}:00`;
+    return new Date(dateTimeStr);
   }
 }

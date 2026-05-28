@@ -25,10 +25,17 @@ export interface TimeSlot {
 
 /**
  * Working hours configuration for a specific day.
+ * 
+ * TEMPORAL INVARIANTS:
+ * - startTime/endTime are in provider timezone (HH:MM format)
+ * - If enabled = false, startTime/endTime should be null
+ * - slotDurationMinutes defines interval between slots
  */
 export interface WorkingHours {
   enabled: boolean;
-  slots: TimeSlot[];
+  startTime: string | null;  // HH:MM in provider timezone
+  endTime: string | null;    // HH:MM in provider timezone
+  slots?: TimeSlot[];        // Optional: pre-computed slots (deprecated, use startTime/endTime)
 }
 
 /**
@@ -56,6 +63,10 @@ export interface BookingConfig {
   advanceBookingDays?: number;      // default: 30
   minimumNoticeHours?: number;      // default: 2
   cancellationWindowHours?: number; // default: 24
+  // Rescheduling semantics
+  rescheduleWindowHours?: number;   // default: 24 (hours before appointment to allow reschedule)
+  // Slot configuration
+  slotDurationMinutes?: number;     // default: 30
 }
 
 /**

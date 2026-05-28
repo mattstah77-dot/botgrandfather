@@ -4,6 +4,7 @@ import { BookingRuntimeService } from './booking-runtime.service';
 import { BookingQueryService } from './booking-query.service';
 import { BookingLifecycleController } from './controllers/booking-lifecycle.controller';
 import { Booking } from './entities/booking.entity';
+import { ProviderAvailability } from './entities/provider-availability.entity';
 import { Bot } from '../../bot/entities/bot.entity';
 import { UserState } from '../../bot/entities/user-state.entity';
 import { TelegramModule } from '../../telegram/telegram.module';
@@ -33,7 +34,7 @@ import { OwnershipModule } from '../../ownership/ownership.module';
  */
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Booking, Bot, UserState]),
+    TypeOrmModule.forFeature([Booking, ProviderAvailability, Bot, UserState]),
     TelegramModule,
     CustomerModule,
     AnalyticsModule,
