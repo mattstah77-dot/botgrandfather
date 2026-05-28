@@ -1,9 +1,19 @@
 # Projection Semantics Preparation
 
 **Purpose:** Define projection ownership, isolation, and non-authority before UNIT 04  
-**Status:** CANONICAL — Tier 2 Contract (Preparation)  
-**Version:** 1.0  
+**Status:** DEPRECATED — Superseded by PRE-UNIT-04 stabilization  
+**Replacement:** `contracts/projection-lifecycle-semantics.md` + `contracts/projection-ownership-semantics.md`  
+**Version:** 1.0-DEPRECATED  
 **Date:** 2026-05-23
+
+---
+
+> ⚠️ **DEPRECATION NOTICE**
+> This document has been superseded by PRE-UNIT-04 stabilization artifacts:
+> - `contracts/projection-lifecycle-semantics.md` — Defines projection lifecycle
+> - `contracts/projection-ownership-semantics.md` — Defines projection ownership
+> 
+> This document is kept for historical trace only. Do NOT consult for semantic truth.
 
 ---
 

@@ -13,9 +13,14 @@
 | Document | What You'll Learn |
 |----------|-------------------|
 | `philosophy/platform-identity.md` | What BotGrandFather IS and IS NOT |
+| `philosophy/operational-platform-identity.md` | Product identity v2.0 — Operational OS |
 | `philosophy/anti-overengineering.md` | Why we reject framework-building |
 | `philosophy/abstraction-emergence.md` | When abstraction is justified |
 | `philosophy/operational-composition.md` | Metadata philosophy |
+| `philosophy/operational-surface-philosophy.md` | What operational surface is and is not |
+| `philosophy/operational-memory-philosophy.md` | Memory vs automation boundaries |
+| `philosophy/temporal-semantics-philosophy.md` | Temporal authority hierarchy |
+| `philosophy/temporal-vs-operational-semantics.md` | Temporal vs operational separation |
 | `philosophy/operational-ui-philosophy.md` | What operational UI is and is not |
 | `philosophy/settings-philosophy.md` | Settings are operational, not runtime |
 | `philosophy/documentation-boundaries.md` | Why platform memory stays clean and canonical |
@@ -31,6 +36,11 @@
 | `invariants/event-semantics.md` | Event naming and semantics |
 | `invariants/multi-tenant-integrity.md` | Tenant isolation |
 | `invariants/sequencing-laws.md` | Evolution order |
+| `contracts/runtime-isolation-reinforcement.md` | Capability runtime isolation |
+| `contracts/projection-authority-boundaries.md` | Projection authority hierarchy |
+| `contracts/temporal-truth-contracts.md` | Temporal source of truth |
+| `contracts/slot-reality-contract.md` | Slot projection semantics |
+| `contracts/occupancy-semantics-boundary.md` | Occupancy boundary definition |
 
 ### I Need to Know Current State
 
@@ -48,8 +58,9 @@
 | Event emission | `contracts/event-contracts.md` |
 | New template | `architecture/template-system.md`, `invariants/metadata-discipline.md` |
 | Dashboard changes | `architecture/dashboard-system.md`, `contracts/capability-contracts.md` |
-| Booking Engine | `contracts/booking-temporal-semantics.md`, `CURRENT_DEVELOPMENT_PHASE.md` |
-| Support Desk | `contracts/support-desk-semantics.md`, `CONTRACT_STABILIZATION_REPORT.md` |
+| Booking Engine | `contracts/booking-temporal-semantics.md`, `contracts/temporal-truth-contracts.md`, `contracts/slot-reality-contract.md`, `contracts/occupancy-contracts.md` |
+| Support Desk | `contracts/support-desk-semantics.md`, `contracts/actor-semantics-contract.md` |
+| Operational Surface | `contracts/projection-authority-boundaries.md`, `contracts/projection-ownership-semantics.md`, `contracts/projection-lifecycle-semantics.md` |
 | Settings | `contracts/settings-contracts.md`, `philosophy/settings-philosophy.md` |
 | Actions | `contracts/action-contracts.md`, `CONTRACT_STABILIZATION_REPORT.md` |
 
@@ -61,6 +72,11 @@
 | `anti-patterns/drift-detection.md` | How to detect drift |
 | `anti-patterns/premature-abstraction.md` | Abstraction anti-patterns |
 | `anti-patterns/metadata-creep.md` | Detecting metadata-driven logic drift |
+| `anti-patterns/scheduling-engine-drift.md` | Prevent scheduling framework drift |
+| `anti-patterns/temporal-automation-drift.md` | Prevent temporal automation |
+| `anti-patterns/forbidden-optimization-patterns.md` | Computation anti-patterns |
+| `anti-patterns/forbidden-operational-patterns.md` | Operational orchestration anti-patterns |
+| `checklists/temporal-drift-detection-checklist.md` | 34-point drift detection checklist |
 
 ### I Need Terminology Clarity
 
@@ -98,6 +114,18 @@
 - `contracts/support-desk-semantics.md`
 - `contracts/settings-contracts.md`
 - `contracts/action-contracts.md`
+- `contracts/temporal-truth-contracts.md`
+- `contracts/slot-reality-contract.md`
+- `contracts/occupancy-semantics-boundary.md`
+- `contracts/occupancy-contracts.md`
+- `contracts/computation-contracts.md`
+- `contracts/projection-authority-boundaries.md`
+- `contracts/projection-ownership-semantics.md`
+- `contracts/projection-lifecycle-semantics.md`
+- `contracts/runtime-isolation-reinforcement.md`
+- `contracts/actor-semantics-contract.md`
+- `contracts/operational-visibility-boundaries.md`
+- `contracts/idempotency-contracts.md`
 
 ### Tier 3 — Current Platform State
 
@@ -141,6 +169,19 @@
 | What contracts exist? | `CONTRACT_STABILIZATION_REPORT.md` |
 | How to detect metadata creep? | `anti-patterns/metadata-creep.md` |
 
+## DOCUMENTATION GOVERNANCE
+
+| Need | Document |
+|------|----------|
+| Complete doc inventory | `governance/DOCUMENTATION_INVENTORY.md` |
+| Canonical hierarchy | `governance/CANONICAL_HIERARCHY_MAP.md` |
+| Semantic overlaps | `governance/OVERLAP_FRAGMENTATION_REPORT.md` |
+| Context routing | `governance/CONTEXT_ROUTING_MODEL.md` |
+| Lifecycle classification | `governance/LIFECYCLE_CLASSIFICATION.md` |
+| Governance recommendations | `governance/GOVERNANCE_RECOMMENDATIONS.md` |
+| Drift risk analysis | `governance/DRIFT_RISK_ANALYSIS.md` |
+| Full governance report | `governance/DOCUMENTATION_GOVERNANCE_REPORT.md` |
+
 ---
 
-**Version 1.2 — 2026-05-23**
+**Version 2.0 — 2026-05-23**
