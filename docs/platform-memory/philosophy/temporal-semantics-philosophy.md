@@ -455,4 +455,182 @@ Accept race conditions, handle gracefully with user feedback.
 
 ---
 
-**Version 1.0 — 2026-05-23**
+## SECTION 10 — TIME AUTHORITY HIERARCHY
+
+### The Hierarchy
+
+```
+Level 1: Database Truth
+    │
+    ├── ProviderAvailability (owner schedule)
+    ├── Booking (customer reservation)
+    ├── Exclusions (holidays, breaks)
+    └── Policies (business rules)
+    │
+Level 2: Explicit Owner Action
+    │
+    ├── Owner confirms booking
+    ├── Owner cancels booking
+    ├── Owner modifies availability
+    └── Owner marks no-show
+    │
+Level 3: Explicit Validation
+    │
+    ├── Slot availability check
+    ├── Status transition validation
+    ├── Policy enforcement (windows)
+    └── Timezone validation
+    │
+Level 4: Policy Constraints
+    │
+    ├── Advance booking limit
+    ├── Cancellation window
+    ├── Reschedule window
+    └── Minimum notice period
+    │
+Level 5: Current Time
+    │
+    └── "Now" — advisory only
+```
+
+### Key Principle
+
+**Higher levels override lower levels. Lower levels are authoritative for their domain.**
+
+Database truth is always authoritative. Owner action mutates truth. Validation enforces rules. Policy constrains actions. Current time is advisory.
+
+### What Time May Do
+
+**Time MAY:**
+- Validate ("Is this booking in the past?")
+- Reject ("Cannot book in the past")
+- Restrict ("Must book at least 2 hours ahead")
+
+**Examples:**
+```typescript
+// ✅ CORRECT: Time validates
+function validateBookingDate(date: string, time: string): boolean {
+  const bookingDateTime = parse(`${date}T${time}`);
+  const now = new Date();
+  
+  if (bookingDateTime < now) {
+    throw new Error('Cannot book in the past');  // Time validates
+  }
+  
+  return true;
+}
+```
+
+### What Time Must NOT Do
+
+**Time MUST NOT:**
+- Orchestrate ("It's time, so transition state")
+- Trigger automation ("Expired, so cancel")
+- Reconcile business state ("Past booking, so mark complete")
+- Mutate state ("Midnight passed, so update status")
+
+**Examples:**
+```typescript
+// ❌ FORBIDDEN: Time orchestrates
+@Cron('0 * * * *')
+async autoCompletePastBookings() {
+  const pastBookings = await this.bookingRepository.find({
+    where: {
+      date: LessThan(format(new Date(), 'yyyy-MM-dd')),
+      status: 'confirmed',
+    },
+  });
+  
+  for (const booking of pastBookings) {
+    booking.status = 'completed';  // Time mutates state!
+    await this.bookingRepository.save(booking);
+  }
+}
+```
+
+### Why Time Is Not Authority
+
+1. **Implicit behavior:** State changes when no one is watching.
+2. **Unpredictable:** Hard to debug why state changed.
+3. **Owner disempowerment:** Owner loses control over state transitions.
+4. **Infrastructure creep:** Background jobs, cron, workers.
+5. **Testing complexity:** Time-based tests are flaky.
+
+### Correct Pattern: Explicit Action
+
+```typescript
+// ✅ CORRECT: Owner explicitly completes
+class BookingRuntimeService {
+  async completeBooking(botId: string, bookingId: string) {
+    const booking = await this.getBooking(bookingId);
+    
+    // Explicit validation
+    if (booking.status !== 'confirmed') {
+      throw new Error('Cannot complete: not confirmed');
+    }
+    
+    // Owner explicitly marks as completed
+    booking.status = 'completed';
+    await this.save(booking);
+    
+    // Audit trail
+    await this.analytics.trackEvent('booking.completed', {
+      bookingId,
+      userId: Number(booking.userId),
+    });
+  }
+}
+```
+
+### The "Now" Problem
+
+**Hidden danger:**
+```typescript
+// ❌ FORBIDDEN: Implicit "now"
+function isBookingPast(booking: Booking): boolean {
+  const bookingTime = parse(`${booking.date}T${booking.timeSlot}`);
+  return bookingTime < new Date();  // Hidden "now"
+}
+```
+
+**Why dangerous:** `new Date()` is implicit authority. It changes behavior based on when code runs.
+
+**Correct pattern:**
+```typescript
+// ✅ CORRECT: Explicit time parameter
+function isBookingPast(booking: Booking, now: Date): boolean {
+  const bookingTime = parse(`${booking.date}T${booking.timeSlot}`);
+  return bookingTime < now;  // Explicit comparison
+}
+
+// Caller decides "now"
+const now = new Date();
+const isPast = isBookingPast(booking, now);
+```
+
+### Canonical Rules for Time Authority
+
+#### Rule 9: Database Is Final Authority
+
+Database state is always authoritative. Not time. Not cache.
+
+#### Rule 10: Owner Action Mutates State
+
+Only explicit owner actions mutate booking state.
+
+#### Rule 11: Time Validates Only
+
+Time may validate, reject, or restrict. Time never mutates.
+
+#### Rule 12: No Background Temporal Workers
+
+No cron jobs, no daemons, no workers that mutate state based on time.
+
+#### Rule 13: Explicit Over Implicit
+
+Explicit time parameters. Explicit state transitions. Explicit owner actions.
+
+---
+
+**Version 2.0 — 2026-05-23**
+
