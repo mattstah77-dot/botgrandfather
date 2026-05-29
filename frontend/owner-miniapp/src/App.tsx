@@ -6,6 +6,7 @@ import { CapabilityPage } from './pages/CapabilityPage';
 import { BookingDetailPage } from './pages/BookingDetailPage';
 import { TicketDetailPage } from './pages/TicketDetailPage';
 import { CustomersPage } from './pages/CustomersPage';
+import { CalendarPage } from './pages/CalendarPage';
 import { Layout } from './components/Layout';
 
 /**
@@ -47,6 +48,9 @@ export default function App() {
             {/* Capability-specific detail routes — EXPLICIT, not dynamic */}
             <Route path="/bots/:botId/bookings/:bookingId" element={<BookingDetailPage />} />
             <Route path="/bots/:botId/tickets/:ticketId" element={<TicketDetailPage />} />
+
+            {/* Capability-specific calendar view — observational only */}
+            <Route path="/bots/:botId/calendar" element={<CalendarPage />} />
 
             {/* Legacy redirects (transitional) */}
             <Route path="/bots/:id/bookings" element={<Navigate to="/bots/:id/capabilities/booking" replace />} />

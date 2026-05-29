@@ -33,7 +33,7 @@ interface BookingPreview {
   date: string;
   timeSlot: string;
   status: string;
-  username: string | null;
+  customerName: string;
 }
 
 export function BotOverviewPage() {
@@ -216,7 +216,7 @@ import type { CapabilityAction } from '../types/operational-contracts';
 const CAPABILITY_ACTIONS: Record<string, CapabilityAction[]> = {
   booking: [
     { id: 'view-bookings', label: 'View Bookings', type: 'navigate', route: '/capabilities/bookings', icon: '📅' },
-    { id: 'view-calendar', label: 'View Calendar', type: 'navigate', route: '/capabilities/calendar', icon: '🗓️' },
+    { id: 'view-calendar', label: 'View Calendar', type: 'navigate', route: '/calendar', icon: '🗓️' },
   ],
   'lead-funnel': [
     { id: 'view-leads', label: 'View Leads', type: 'navigate', route: '/capabilities/leads', icon: '📊' },

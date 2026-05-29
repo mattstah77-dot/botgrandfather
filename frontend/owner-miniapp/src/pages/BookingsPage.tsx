@@ -9,8 +9,8 @@ interface Booking {
   date: string;
   timeSlot: string;
   status: string;
-  username: string | null;
-  createdAt: string;
+  customerName: string;
+  providerName?: string | null;
 }
 
 export function BookingsPage() {
@@ -103,9 +103,9 @@ export function BookingsPage() {
               <div style={{ fontSize: '13px', color: 'var(--tg-theme-hint-color)' }}>
                 📅 {b.date} &nbsp; 🕐 {b.timeSlot}
               </div>
-              {b.username && (
+              {b.customerName && (
                 <div style={{ fontSize: '13px', color: 'var(--tg-theme-hint-color)', marginTop: '4px' }}>
-                  👤 @{b.username}
+                  👤 {b.customerName}
                 </div>
               )}
             </div>

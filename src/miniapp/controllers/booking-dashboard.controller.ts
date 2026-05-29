@@ -11,6 +11,11 @@ import {
 import { MiniAppAuthGuard } from '../auth/miniapp-auth.guard';
 import { BotOwnershipGuard } from '../../ownership/bot-ownership.guard';
 import { BookingQueryService } from '../../templates/booking/booking-query.service';
+import {
+  BookingOperationalProjection,
+  BookingDashboardProjection,
+  BookingCalendarProjection,
+} from '../../templates/booking/projections';
 
 /**
  * Booking Dashboard Controller — bot-specific booking operational endpoints.
@@ -32,6 +37,7 @@ export class BookingDashboardController {
    * GET /miniapp/bots/:id/bookings
    *
    * Booking list for a bot.
+   * Returns BookingOperationalProjection — read-only projection.
    * Supports: status filter, search query, date sorting.
    */
   @Get(':id/bookings')
@@ -42,26 +48,45 @@ export class BookingDashboardController {
     @Query('status') status?: string,
     @Query('search') search?: string,
     @Query('sort') sort?: string,
-  ) {
-    return this.bookingQueryService.getBotBookings(botId, page, limit, status, search, sort);
+  ): Promise<{ items: BookingOperationalProjection[]; pagination: { page: number; limit: number; total: number; pages: number } }> {
+    return this.bookingQueryService.getOperationalBookings(botId, page, limit, status, search, sort);
+  }
+
+  /**
+   * GET /miniapp/bots/:id/bookings/metrics
+   *
+   * Dashboard metrics for booking capability.
+   * Returns BookingDashboardProjection — simple recomputation only.
+   */
+  @Get(':id/bookings/metrics')
+  async getBookingMetrics(
+    @Param('id') botId: string,
+  ): Promise<BookingDashboardProjection> {
+    return this.bookingQueryService.getDashboardMetrics(botId);
   }
 
   /**
    * GET /miniapp/bots/:id/bookings/calendar
    *
    * Calendar view data for a bot.
-   * Returns bookings grouped by date.
+   * Returns BookingCalendarProjection — observational only.
+   * Date range required: from, to (YYYY-MM-DD).
    */
   @Get(':id/bookings/calendar')
   async getBotBookingsCalendar(
     @Param('id') botId: string,
     @Query('from') from: string,
     @Query('to') to: string,
-  ) {
-    // TODO: Implement calendar aggregation query
-    // For now, return all bookings in date range
-    const bookings = await this.bookingQueryService.getBotBookings(botId, 1, 100);
-    return bookings;
+  ): Promise<BookingCalendarProjection[]> {
+    // Default to current month if no range provided
+    const today = new Date();
+    const defaultFrom = new Date(today.getFullYear(), today.getMonth(), 1);
+    const defaultTo = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
+    const resolvedFrom = from || defaultFrom.toISOString().split('T')[0];
+    const resolvedTo = to || defaultTo.toISOString().split('T')[0];
+
+    return this.bookingQueryService.getCalendarProjection(botId, resolvedFrom, resolvedTo);
   }
 
   /**

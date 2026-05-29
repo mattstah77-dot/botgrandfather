@@ -277,7 +277,7 @@ function transformToCapabilityItem(item: any, capability: string): CapabilityIte
       subtitle: item.date && item.timeSlot ? `${item.date} at ${item.timeSlot}` : undefined,
       status: item.status,
       metadata: {
-        username: item.username,
+        customerName: item.customerName,
         createdAt: item.createdAt,
       },
     };

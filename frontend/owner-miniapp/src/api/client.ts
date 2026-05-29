@@ -125,12 +125,32 @@ export const api = {
         date: string;
         timeSlot: string;
         status: string;
-        username: string | null;
-        createdAt: string;
+        customerName: string;
+        providerName?: string | null;
       }>;
       pagination: { page: number; limit: number; total: number; pages: number };
     }>(`/miniapp/bots/${botId}/bookings?${params.toString()}`);
   },
+
+  /** Get booking dashboard metrics */
+  getBookingMetrics: (botId: string) => request<{
+    totalBookings: number;
+    upcomingBookings: number;
+    completedBookings: number;
+    cancelledBookings: number;
+  }>(`/miniapp/bots/${botId}/bookings/metrics`),
+
+  /** Get booking calendar projection */
+  getBookingCalendar: (botId: string, from: string, to: string) => request<Array<{
+    date: string;
+    bookings: Array<{
+      id: string;
+      serviceName: string;
+      timeSlot: string;
+      status: string;
+      customerName: string;
+    }>;
+  }>>(`/miniapp/bots/${botId}/bookings/calendar?from=${from}&to=${to}`),
 
   /** Get single booking detail */
   getBookingDetail: (botId: string, bookingId: string) => request<{

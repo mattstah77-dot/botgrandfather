@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
+import { Repository, In, MoreThanOrEqual } from 'typeorm';
 import { Booking } from './entities/booking.entity';
 import { ProviderAvailability } from './entities/provider-availability.entity';
 import { Bot } from '../../bot/entities/bot.entity';
@@ -9,6 +9,11 @@ import {
   CapabilityMetrics,
 } from '../../dashboard/interfaces/dashboard-capability-provider.interface';
 import { AvailabilityService } from './services/availability.service';
+import {
+  BookingOperationalProjection,
+  BookingDashboardProjection,
+  BookingCalendarProjection,
+} from './projections';
 
 /**
  * BookingQueryService — operational data access for the booking template.
@@ -18,6 +23,7 @@ import { AvailabilityService } from './services/availability.service';
  * - Booking lists, counts, calendar data
  * - Slot availability checks (delegates to AvailabilityService for truth-based computation)
  * - Dashboard capability metrics (implements DashboardCapabilityProvider)
+ * - Operational projections (BookingOperationalProjection, BookingDashboardProjection, BookingCalendarProjection)
  *
  * DOES NOT:
  * - Handle Telegram conversations
@@ -281,6 +287,108 @@ export class BookingQueryService implements DashboardCapabilityProvider {
       default:
         return [];
     }
+  }
+
+  // ─── OPERATIONAL PROJECTIONS ─────────────────────────────────
+
+  /**
+   * Get operational booking list projection.
+   *
+   * Returns BookingOperationalProjection[] — read-only projection for owner list view.
+   * Recomputed per request. No caching.
+   */
+  async getOperationalBookings(
+    botId: string,
+    page: number = 1,
+    limit: number = 20,
+    status?: string,
+    search?: string,
+    sort?: string,
+  ): Promise<{ items: BookingOperationalProjection[]; pagination: { page: number; limit: number; total: number; pages: number } }> {
+    const result = await this.getBotBookings(botId, page, limit, status, search, sort);
+
+    const items: BookingOperationalProjection[] = result.items.map((b) => ({
+      id: b.id,
+      customerName: b.username ? `@${b.username}` : `User ${b.userId}`,
+      serviceName: b.serviceName,
+      date: b.date,
+      timeSlot: b.timeSlot,
+      status: b.status,
+      providerName: b.providerId ?? null,
+    }));
+
+    return { items, pagination: result.pagination };
+  }
+
+  /**
+   * Get dashboard metrics projection.
+   *
+   * Simple recomputation from Booking entity.
+   * NO analytics engine. NO aggregation infrastructure.
+   */
+  async getDashboardMetrics(botId: string): Promise<BookingDashboardProjection> {
+    const today = new Date().toISOString().split('T')[0];
+
+    const [totalBookings, upcomingBookings, completedBookings, cancelledBookings] = await Promise.all([
+      this.bookingRepository.count({ where: { botId } }),
+      this.bookingRepository.count({
+        where: { botId, date: MoreThanOrEqual(today), status: In(['pending', 'confirmed']) },
+      }),
+      this.bookingRepository.count({ where: { botId, status: 'completed' } }),
+      this.bookingRepository.count({ where: { botId, status: 'cancelled' } }),
+    ]);
+
+    return {
+      totalBookings,
+      upcomingBookings,
+      completedBookings,
+      cancelledBookings,
+    };
+  }
+
+  /**
+   * Get calendar projection for a date range.
+   *
+   * Observational only. NOT a scheduling engine.
+   * Returns bookings grouped by date for calendar visualization.
+   */
+  async getCalendarProjection(
+    botId: string,
+    from: string,
+    to: string,
+  ): Promise<BookingCalendarProjection[]> {
+    const bookings = await this.bookingRepository
+      .createQueryBuilder('b')
+      .where('b.botId = :botId', { botId })
+      .andWhere('b.date >= :from', { from })
+      .andWhere('b.date <= :to', { to })
+      .orderBy('b.date', 'ASC')
+      .addOrderBy('b.timeSlot', 'ASC')
+      .getMany();
+
+    // Group by date
+    const groups = new Map<string, Booking[]>();
+    for (const booking of bookings) {
+      const list = groups.get(booking.date) ?? [];
+      list.push(booking);
+      groups.set(booking.date, list);
+    }
+
+    const projections: BookingCalendarProjection[] = [];
+    for (const [date, dateBookings] of groups) {
+      projections.push({
+        date,
+        bookings: dateBookings.map((b) => ({
+          id: b.id,
+          serviceName: b.serviceName,
+          timeSlot: b.timeSlot,
+          status: b.status,
+          customerName: b.username ? `@${b.username}` : `User ${b.userId}`,
+        })),
+      });
+    }
+
+    return projections;
   }
 }
 
