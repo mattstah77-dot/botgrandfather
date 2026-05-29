@@ -23,6 +23,9 @@
 | `philosophy/temporal-vs-operational-semantics.md` | Temporal vs operational separation |
 | `philosophy/operational-ui-philosophy.md` | What operational UI is and is not |
 | `philosophy/settings-philosophy.md` | Settings are operational, not runtime |
+| `philosophy/runtime-access-philosophy.md` | Chat is access layer, MiniApp is execution layer |
+| `philosophy/customer-friction-philosophy.md` | UX laws for minimizing customer friction |
+| `philosophy/unified-operational-surface.md` | Owner operational surface semantics |
 | `philosophy/documentation-boundaries.md` | Why platform memory stays clean and canonical |
 
 ### I Need to Know Platform Laws
@@ -78,6 +81,7 @@
 | `anti-patterns/forbidden-operational-patterns.md` | Operational orchestration anti-patterns |
 | `anti-patterns/projection-anti-patterns.md` | Projection-specific anti-patterns |
 | `anti-patterns/read-model-anti-patterns.md` | Read model consumption anti-patterns |
+| `anti-patterns/runtime-duplication-anti-patterns.md` | Runtime duplication prevention |
 | `checklists/temporal-drift-detection-checklist.md` | 34-point drift detection checklist |
 
 ### I Need Terminology Clarity
@@ -145,6 +149,9 @@
 - `contracts/stale-projection-semantics.md`
 - `contracts/telegram-runtime-reliability.md`
 - `contracts/reliability-boundaries.md`
+- `contracts/surface-taxonomy-contracts.md`
+- `contracts/runtime-modality-contracts.md`
+- `contracts/chat-miniapp-boundaries.md`
 
 ### Tier 3 — Current Platform State
 
@@ -158,6 +165,7 @@
 - `audits/booking-concurrency-audit.md`
 - `audits/infrastructure-drift-containment.md`
 - `audits/runtime-reality-audit.md`
+- `audits/surface-interaction-audit.md`
 
 ### Tier 4 — Architecture Descriptions
 
@@ -220,3 +228,4 @@
 | UNIT-04 | 2026-05-23 | ✅ Complete |
 | UNIT-05 | 2026-05-23 | ✅ Complete |
 | UNIT-06 | 2026-05-23 | ✅ Complete |
+| UNIT-07 | 2026-05-23 | ✅ Complete |
