@@ -96,6 +96,18 @@
 |----------|-------------------|
 | `historical/decision-log.md` | Why decisions were made |
 
+### I Need Implementation Guidance
+
+| Document | What You'll Learn |
+|----------|-------------------|
+| `implementation/implementation-authority-hierarchy.md` | Which docs are authoritative during coding |
+| `implementation/runtime-implementation-methodology.md` | Correct implementation flow |
+| `implementation/implementation-drift-detection.md` | Drift signals during coding |
+| `implementation/development-context-loading.md` | How to load docs during implementation |
+| `implementation/booking-construction-sequence.md` | Exact booking implementation order |
+| `implementation/booking-implementation-success-criteria.md` | Success/failure criteria |
+| `implementation/do-not-build-yet.md` | Explicitly forbidden premature systems |
+
 ---
 
 ## BY TIER
@@ -181,6 +193,16 @@
 - `historical/decision-log.md`
 - `glossary/canonical-terminology.md`
 
+### Tier 6 — Implementation Governance
+
+- `implementation/implementation-authority-hierarchy.md`
+- `implementation/runtime-implementation-methodology.md`
+- `implementation/implementation-drift-detection.md`
+- `implementation/development-context-loading.md`
+- `implementation/booking-construction-sequence.md`
+- `implementation/booking-implementation-success-criteria.md`
+- `implementation/do-not-build-yet.md`
+
 ---
 
 ## QUICK REFERENCE
@@ -216,7 +238,7 @@
 
 ---
 
-**Version 2.2 — 2026-05-23**
+**Version 2.3 — 2026-05-23**
 
 ---
 
@@ -229,3 +251,4 @@
 | UNIT-05 | 2026-05-23 | ✅ Complete |
 | UNIT-06 | 2026-05-23 | ✅ Complete |
 | UNIT-07 | 2026-05-23 | ✅ Complete |
+| BOOKING IMPLEMENTATION TRANSITION | 2026-05-23 | ✅ Complete |
