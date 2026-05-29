@@ -5,6 +5,7 @@ import { Booking } from '../templates/booking/entities/booking.entity';
 import { BookingModule } from '../templates/booking/booking.module';
 import { CustomerModule } from '../customer/customer.module';
 import { AnalyticsModule } from '../analytics/analytics.module';
+import { TelegramModule } from '../telegram/telegram.module';
 import { CustomerAuthGuard } from './auth/customer-auth.guard';
 import { CustomerBookingController } from './controllers/customer-booking.controller';
 import { CustomerBookingService } from './services/customer-booking.service';
@@ -43,6 +44,7 @@ import { CustomerBookingService } from './services/customer-booking.service';
     BookingModule,
     CustomerModule,
     AnalyticsModule,
+    TelegramModule,
   ],
   controllers: [CustomerBookingController],
   providers: [CustomerAuthGuard, CustomerBookingService],

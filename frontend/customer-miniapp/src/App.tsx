@@ -31,13 +31,28 @@ function BookingFlow() {
   const { initData, isTelegram, ready } = useTelegram();
   const [step, setStep] = useState<Step>('service');
   const [booking, setBooking] = useState<BookingData | null>(null);
+  const [services, setServices] = useState<Service[]>([]);
+  const [loadingServices, setLoadingServices] = useState(true);
   const [error, setError] = useState('');
 
   const botId = getBotIdFromUrl();
 
   useEffect(() => {
     setInitData(initData);
-  }, [initData]);
+    
+    // Load services from backend
+    if (botId) {
+      api.getServices(botId)
+        .then((data: { services: Service[] }) => {
+          setServices(data.services);
+          setLoadingServices(false);
+        })
+        .catch((_err) => {
+          setError('Failed to load services');
+          setLoadingServices(false);
+        });
+    }
+  }, [botId, initData]);
 
   const onSelectService = useCallback((service: Service) => {
     setBooking({
@@ -65,10 +80,8 @@ function BookingFlow() {
     try {
       await api.createBooking(botId, {
         serviceId: booking.serviceId,
-        serviceName: booking.serviceName,
         date: booking.date,
         timeSlot: booking.timeSlot,
-        durationMinutes: booking.durationMinutes,
       });
       setStep('success');
     } catch (err) {
@@ -82,7 +95,7 @@ function BookingFlow() {
     setStep('service');
   }, []);
 
-  if (!ready) {
+  if (!ready || loadingServices) {
     return <LoadingScreen />;
   }
 
@@ -141,7 +154,7 @@ function BookingFlow() {
         ))}
       </div>
 
-      {step === 'service' && <ServiceStep onSelect={onSelectService} />}
+      {step === 'service' && <ServiceStep services={services} onSelect={onSelectService} />}
       {step === 'date' && <DateStep onSelect={onSelectDate} onBack={() => setStep('service')} />}
       {step === 'time' && <TimeStep botId={botId} date={booking?.date || ''} onSelect={onSelectTime} onBack={() => setStep('date')} />}
       {step === 'confirm' && <ConfirmStep booking={booking!} onConfirm={onConfirm} onBack={() => setStep('time')} />}
@@ -161,18 +174,22 @@ function getBotIdFromUrl(): string | null {
 
 // ─── Steps ─────────────────────────────────────────────────────
 
-const SERVICES: Service[] = [
-  { id: 'consultation', name: 'Consultation', durationMinutes: 30, price: 50 },
-  { id: 'session', name: 'Full Session', durationMinutes: 60, price: 100 },
-  { id: 'premium', name: 'Premium Package', durationMinutes: 90, price: 150 },
-];
+function ServiceStep({ services, onSelect }: { services: Service[]; onSelect: (s: Service) => void }) {
+  if (services.length === 0) {
+    return (
+      <div style={centerStyle}>
+        <p style={{ color: '#666', textAlign: 'center' }}>
+          No services available. Please contact the business owner.
+        </p>
+      </div>
+    );
+  }
 
-function ServiceStep({ onSelect }: { onSelect: (s: Service) => void }) {
   return (
     <div>
       <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 16 }}>Select Service</h2>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {SERVICES.map((service) => (
+        {services.map((service) => (
           <button
             key={service.id}
             onClick={() => onSelect(service)}

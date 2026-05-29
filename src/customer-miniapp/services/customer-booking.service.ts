@@ -4,8 +4,11 @@ import { Repository } from 'typeorm';
 import { Booking } from '../../templates/booking/entities/booking.entity';
 import { Bot } from '../../bot/entities/bot.entity';
 import { BookingQueryService } from '../../templates/booking/booking-query.service';
+import { BookingValidationService, BookingValidationError } from '../../templates/booking/services/booking-validation.service';
 import { CustomerService } from '../../customer/customer.service';
 import { AnalyticsService } from '../../analytics/analytics.service';
+import { TelegramService } from '../../telegram/telegram.service';
+import { WEBHOOK_HOST } from '../../config/env.config';
 
 /**
  * CustomerBookingService — customer-facing booking operations for Mini App.
@@ -35,8 +38,10 @@ export class CustomerBookingService {
     @InjectRepository(Bot)
     private readonly botRepository: Repository<Bot>,
     private readonly bookingQueryService: BookingQueryService,
+    private readonly bookingValidationService: BookingValidationService,
     private readonly customerService: CustomerService,
     private readonly analyticsService: AnalyticsService,
+    private readonly telegramService: TelegramService,
   ) {}
 
   /**
@@ -48,19 +53,42 @@ export class CustomerBookingService {
   }
 
   /**
+   * Get services configured for a bot.
+   * Reads from bot config — services are owner-configured truth.
+   */
+  async getServices(botId: string): Promise<Array<{
+    id: string;
+    name: string;
+    durationMinutes: number;
+    price?: number;
+  }>> {
+    const bot = await this.botRepository.findOne({
+      where: { id: botId },
+      select: ['config'],
+    });
+
+    return (bot?.config?.services || []) as Array<{
+      id: string;
+      name: string;
+      durationMinutes: number;
+      price?: number;
+    }>;
+  }
+
+  /**
    * Create a booking from the customer Mini App.
    *
    * Flow:
    * 1. Ensure customer exists
    * 2. Lookup service details from bot config
-   * 3. Validate slot is still available (race condition check)
+   * 3. CANONICAL write-time validation (re-reads truth from DB)
    * 4. Create booking
    * 5. Mark customer as converted
    * 6. Track analytics
-   * 7. Return booking
+   * 7. Send chat confirmation (hybrid UX)
+   * 8. Return booking
    *
-   * NOTE: Does NOT send Telegram confirmation messages.
-   * The Mini App UI shows confirmation directly.
+   * NOTE: Write-time validation is authoritative. DB constraint is final guard.
    */
   async createBooking(params: {
     botId: string;
@@ -78,7 +106,7 @@ export class CustomerBookingService {
     // Lookup service details from bot config
     const bot = await this.botRepository.findOne({
       where: { id: botId },
-      select: ['config'],
+      select: ['token', 'config'],
     });
 
     const services = (bot?.config?.services || []) as Array<{
@@ -93,10 +121,15 @@ export class CustomerBookingService {
       throw new BadRequestException('Invalid service selected');
     }
 
-    // Validate slot is available (race condition guard)
-    const availableSlots = await this.bookingQueryService.getAvailableSlots(botId, date);
-    if (!availableSlots.includes(timeSlot)) {
-      throw new BadRequestException('Time slot is no longer available');
+    // CANONICAL: Write-time validation (Phase 2 BookingValidationService)
+    // Re-reads truth from DB. Not trusting read-time projections.
+    try {
+      await this.bookingValidationService.validateBookingCreation(botId, date, timeSlot);
+    } catch (error) {
+      if (error instanceof BookingValidationError) {
+        throw new BadRequestException(error.message);
+      }
+      throw error;
     }
 
     // Create booking
@@ -145,6 +178,22 @@ export class CustomerBookingService {
         timeSlot,
       },
     );
+
+    // HYBRID UX: Send chat confirmation with MiniApp reopen button
+    // Chat = access layer. MiniApp = execution layer.
+    if (bot?.token) {
+      const webAppUrl = `${WEBHOOK_HOST}/customer?botId=${botId}`;
+      await this.telegramService.sendMessage(
+        bot.token,
+        userIdNum,
+        `✅ Booking confirmed!\n\n📅 ${date} at ${timeSlot}\n🛎️ ${service.name}`,
+        {
+          inline_keyboard: [
+            [{ text: '📅 Open Booking', web_app: { url: webAppUrl } }],
+          ],
+        },
+      );
+    }
 
     return savedBooking;
   }

@@ -47,6 +47,17 @@ export class CustomerBookingController {
   constructor(private readonly customerBookingService: CustomerBookingService) {}
 
   /**
+   * GET /api/customer/bot/:botId/services
+   *
+   * Returns services configured for this bot.
+   */
+  @Get('services')
+  async getServices(@Param('botId') botId: string) {
+    const services = await this.customerBookingService.getServices(botId);
+    return { services };
+  }
+
+  /**
    * GET /api/customer/bot/:botId/slots?date=YYYY-MM-DD
    *
    * Returns available time slots for the specified date.

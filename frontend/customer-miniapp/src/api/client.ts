@@ -30,15 +30,16 @@ async function fetchJson(path: string, options?: RequestInit) {
 }
 
 export const api = {
+  getServices: (botId: string) =>
+    fetchJson(`/api/customer/bot/${botId}/services`),
+
   getSlots: (botId: string, date: string) =>
     fetchJson(`/api/customer/bot/${botId}/slots?date=${encodeURIComponent(date)}`),
 
   createBooking: (botId: string, body: {
     serviceId: string;
-    serviceName: string;
     date: string;
     timeSlot: string;
-    durationMinutes: number;
   }) => fetchJson(`/api/customer/bot/${botId}/bookings`, {
     method: 'POST',
     body: JSON.stringify(body),
