@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ProviderAvailabilityRepository } from '../repositories/provider-availability.repository';
 import { AvailabilityExclusionRepository } from '../repositories/availability-exclusion.repository';
 import { BookingRepository } from '../repositories/booking.repository';
-import { OCCUPYING_STATUSES } from '../booking.constants';
+import { OCCUPYING_STATUSES, BOOKING_DEFAULTS } from '../booking.constants';
 import { ProviderAvailability } from '../entities/provider-availability.entity';
 
 /**
@@ -35,7 +35,25 @@ export class AvailabilityService {
   ) {}
 
   /**
-   * Check if a specific slot is available (not occupied).
+   * Check if a specific date is excluded (vacation, holiday, break).
+   *
+   * CANONICAL: Exclusions are truth. Computed per request.
+   */
+  async isDateExcluded(
+    botId: string,
+    date: string,
+    providerId?: string | null,
+  ): Promise<boolean> {
+    const exclusions = await this.exclusionRepo.findExclusionsForDate(
+      botId,
+      date,
+      providerId,
+    );
+    return exclusions.length > 0;
+  }
+
+  /**
+   * Check if a specific slot is available (not occupied and not excluded).
    *
    * CANONICAL: Per write-time-validation-contracts.md — validation at write time.
    */
@@ -46,12 +64,30 @@ export class AvailabilityService {
     providerId?: string | null,
   ): Promise<boolean> {
     // Check if date is excluded
-    const exclusions = await this.exclusionRepo.findExclusionsForDate(
-      botId,
-      date,
-      providerId,
+    const isExcluded = await this.isDateExcluded(botId, date, providerId);
+    if (isExcluded) {
+      return false;
+    }
+
+    // Check if time is within working hours
+    const dayOfWeek = this.getDayOfWeek(date);
+    const availability =
+      await this.providerAvailabilityRepo.findByBotProviderAndWeekday(
+        botId,
+        providerId ?? null,
+        dayOfWeek,
+      );
+
+    if (!availability || !availability.isWorkingDay || !availability.startTime || !availability.endTime) {
+      return false;
+    }
+
+    const baseSlots = this.generateTimeSlots(
+      availability.startTime,
+      availability.endTime,
+      BOOKING_DEFAULTS.SLOT_DURATION_MINUTES,
     );
-    if (exclusions.length > 0) {
+    if (!baseSlots.includes(timeSlot)) {
       return false;
     }
 
@@ -78,6 +114,7 @@ export class AvailabilityService {
     botId: string,
     date: string,
     providerId?: string | null,
+    slotDurationMinutes: number = BOOKING_DEFAULTS.SLOT_DURATION_MINUTES,
   ): Promise<string[]> {
     // Determine day of week
     const dayOfWeek = this.getDayOfWeek(date);
@@ -99,6 +136,8 @@ export class AvailabilityService {
     if (
       !availability ||
       !availability.isWorkingDay ||
+      !availability.startTime ||
+      !availability.endTime ||
       exclusions.length > 0
     ) {
       return [];
@@ -106,8 +145,9 @@ export class AvailabilityService {
 
     // Generate base slots from working hours
     const baseSlots = this.generateTimeSlots(
-      availability.startTime!,
-      availability.endTime!,
+      availability.startTime,
+      availability.endTime,
+      slotDurationMinutes,
     );
 
     // Get booked slots
@@ -141,9 +181,16 @@ export class AvailabilityService {
 
   /**
    * Generate time slots between start and end times.
-   * Uses default 30-minute intervals.
+   *
+   * @param start - Start time (HH:MM)
+   * @param end - End time (HH:MM)
+   * @param slotDurationMinutes - Duration of each slot in minutes (default: 30)
    */
-  private generateTimeSlots(start: string, end: string): string[] {
+  private generateTimeSlots(
+    start: string,
+    end: string,
+    slotDurationMinutes: number = BOOKING_DEFAULTS.SLOT_DURATION_MINUTES,
+  ): string[] {
     const slots: string[] = [];
     const [startHour, startMin] = start.split(':').map(Number);
     const [endHour, endMin] = end.split(':').map(Number);
@@ -151,11 +198,11 @@ export class AvailabilityService {
     let current = startHour * 60 + startMin;
     const endTime = endHour * 60 + endMin;
 
-    while (current + 30 <= endTime) {
+    while (current + slotDurationMinutes <= endTime) {
       const h = Math.floor(current / 60);
       const m = current % 60;
       slots.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
-      current += 30;
+      current += slotDurationMinutes;
     }
 
     return slots;

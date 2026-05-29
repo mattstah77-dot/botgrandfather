@@ -9,6 +9,7 @@ import { AvailabilityExclusion } from './entities/availability-exclusion.entity'
 import { BookingRepository } from './repositories/booking.repository';
 import { ProviderAvailabilityRepository } from './repositories/provider-availability.repository';
 import { AvailabilityExclusionRepository } from './repositories/availability-exclusion.repository';
+import { BookingValidationService } from './services/booking-validation.service';
 import { AvailabilityService } from './services/availability.service';
 import { Bot } from '../../bot/entities/bot.entity';
 import { UserState } from '../../bot/entities/user-state.entity';
@@ -68,6 +69,7 @@ import { OwnershipModule } from '../../ownership/ownership.module';
     ProviderAvailabilityRepository,
     AvailabilityExclusionRepository,
     AvailabilityService,
+    BookingValidationService,
     // Runtime layer
     BookingRuntimeService,
     // Operational layer
@@ -77,6 +79,7 @@ import { OwnershipModule } from '../../ownership/ownership.module';
     BookingRuntimeService,
     BookingQueryService,
     AvailabilityService,
+    BookingValidationService,
     BookingRepository,
     ProviderAvailabilityRepository,
     AvailabilityExclusionRepository,

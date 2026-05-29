@@ -12,6 +12,8 @@ import { BookingConfig, BookingProgress } from './booking.types';
 import { BookingQueryService } from './booking-query.service';
 import { WEBHOOK_HOST } from '../../config/env.config';
 import { Bot } from '../../bot/entities/bot.entity';
+import { BookingValidationService } from './services/booking-validation.service';
+import { AvailabilityService } from './services/availability.service';
 
 /**
  * BookingRuntimeService — runtime conversation flow for the booking template.
@@ -35,6 +37,8 @@ export class BookingRuntimeService implements TemplateService {
     private readonly customerService: CustomerService,
     private readonly analyticsService: AnalyticsService,
     private readonly bookingQueryService: BookingQueryService,
+    private readonly bookingValidationService: BookingValidationService,
+    private readonly availabilityService: AvailabilityService,
     private readonly dataSource: DataSource,
     @InjectRepository(UserState)
     private readonly userStateRepository: Repository<UserState>,
@@ -463,12 +467,14 @@ export class BookingRuntimeService implements TemplateService {
       return;
     }
 
+    // CANONICAL: Write-time occupancy validation (occupancy-contracts.md §2)
+    // Re-read truth at write time. Check BOTH pending and confirmed statuses.
     const existingBooking = await this.bookingRepository.findOne({
       where: {
         botId: context.botId,
         date: progress.selectedDate,
         timeSlot: progress.selectedTime,
-        status: 'pending',
+        status: In(['pending', 'confirmed']),
       },
     });
 
@@ -874,8 +880,13 @@ export class BookingRuntimeService implements TemplateService {
       throw new Error('New date/time must be different from current booking');
     }
 
-    // Validate new slot availability
-    const isSlotAvailable = await this.isSlotAvailable(botId, newDate, newTime);
+    // Validate new slot availability using AvailabilityService (truth-based)
+    const isSlotAvailable = await this.availabilityService.isSlotAvailable(
+      botId,
+      newDate,
+      newTime,
+      booking.providerId,
+    );
     if (!isSlotAvailable) {
       throw new Error(`Slot ${newDate} ${newTime} is not available`);
     }
@@ -916,27 +927,6 @@ export class BookingRuntimeService implements TemplateService {
   }
 
   /**
-   * Check if a slot is available (not booked).
-   * 
-   * @param botId - Bot ID
-   * @param date - Date (YYYY-MM-DD)
-   * @param time - Time (HH:MM)
-   * @returns true if slot is available
-   */
-  private async isSlotAvailable(botId: string, date: string, time: string): Promise<boolean> {
-    const existing = await this.bookingRepository.findOne({
-      where: {
-        botId,
-        date,
-        timeSlot: time,
-        status: In(['pending', 'confirmed']),
-      },
-    });
-
-    return existing === null;
-  }
-
-  /**
    * Get bot config (cached lookup).
    */
   private async getBookingConfig(botId: string): Promise<BookingConfig> {
@@ -954,7 +944,7 @@ export class BookingRuntimeService implements TemplateService {
 
   /**
    * Parse datetime string with timezone.
-   * 
+   *
    * NOTE: Uses simple parsing for validation.
    * For production timezone-safe parsing, use date-fns-tz or moment-timezone.
    */
@@ -964,3 +954,4 @@ export class BookingRuntimeService implements TemplateService {
     return new Date(dateTimeStr);
   }
 }
+

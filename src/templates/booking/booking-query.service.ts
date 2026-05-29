@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In, IsNull } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { Booking } from './entities/booking.entity';
 import { ProviderAvailability } from './entities/provider-availability.entity';
 import { Bot } from '../../bot/entities/bot.entity';
@@ -8,7 +8,7 @@ import {
   DashboardCapabilityProvider,
   CapabilityMetrics,
 } from '../../dashboard/interfaces/dashboard-capability-provider.interface';
-import { WorkingHours } from './booking.types';
+import { AvailabilityService } from './services/availability.service';
 
 /**
  * BookingQueryService — operational data access for the booking template.
@@ -16,7 +16,7 @@ import { WorkingHours } from './booking.types';
  * RESPONSIBILITY:
  * - Read-only queries for Mini App dashboards
  * - Booking lists, counts, calendar data
- * - Slot availability checks
+ * - Slot availability checks (delegates to AvailabilityService for truth-based computation)
  * - Dashboard capability metrics (implements DashboardCapabilityProvider)
  *
  * DOES NOT:
@@ -26,6 +26,7 @@ import { WorkingHours } from './booking.types';
  * - Send messages
  * - Orchestrate workflows
  * - Emit events
+ * - Compute availability directly (delegates to AvailabilityService)
  *
  * USED BY:
  * - BookingDashboardController (Mini App)
@@ -42,6 +43,7 @@ export class BookingQueryService implements DashboardCapabilityProvider {
     private readonly providerAvailabilityRepository: Repository<ProviderAvailability>,
     @InjectRepository(Bot)
     private readonly botRepository: Repository<Bot>,
+    private readonly availabilityService: AvailabilityService,
   ) {}
 
   /**
@@ -179,71 +181,29 @@ export class BookingQueryService implements DashboardCapabilityProvider {
   /**
    * Get available time slots for a specific date.
    *
-   * NEW: Uses ProviderAvailability entity if configured, falls back to bot config.
+   * DELEGATES to AvailabilityService for truth-based computation.
    *
-   * Reads bot config (working hours, slot duration) and subtracts booked slots.
+   * AvailabilityService computes slots from:
+   * - ProviderAvailability (weekly hours)
+   * - AvailabilityExclusion (date-range exclusions)
+   * - Booking occupancy (pending/confirmed)
+   *
    * Pure query-layer logic — no runtime state, no Telegram interaction.
    *
    * Returns array of available slot strings (e.g., ["09:00", "09:30", ...]).
    */
-  async getAvailableSlots(botId: string, date: string): Promise<string[]> {
-    // Determine day of week
-    const dayOfWeek = new Date(date).toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase() as 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
-
-    // Try to get ProviderAvailability first
-    const providerAvailability = await this.providerAvailabilityRepository.findOne({
-      where: { botId, providerId: IsNull(), weekday: dayOfWeek },
-    });
-
-    let workingHours: WorkingHours | null = null;
-
-    if (providerAvailability && providerAvailability.isWorkingDay && providerAvailability.startTime && providerAvailability.endTime) {
-      workingHours = {
-        enabled: true,
-        startTime: providerAvailability.startTime,
-        endTime: providerAvailability.endTime,
-      };
-    } else {
-      // Fallback to bot config
-      const bot = await this.botRepository.findOne({
-        where: { id: botId },
-        select: ['config'],
-      });
-
-      if (!bot) {
-        return [];
-      }
-
-      const config = bot.config || {};
-      workingHours = config.workingHours?.[dayOfWeek] || null;
-    }
-
-    if (!workingHours || !workingHours.enabled || !workingHours.startTime || !workingHours.endTime) {
-      return []; // Closed on this day
-    }
-
-    // Check for excluded dates
-    if (providerAvailability?.excludedDates?.includes(date)) {
-      return []; // Holiday/break
-    }
-
-    // Get slot duration from config
-    const bot = await this.botRepository.findOne({
-      where: { id: botId },
-      select: ['config'],
-    });
-    const config = bot?.config || {};
-    const slotDuration = (config.slotDuration as number) || 30;
-
-    // Generate all possible slots
-    const slots = this.generateTimeSlots(workingHours.startTime, workingHours.endTime, slotDuration);
-
-    // Get booked slots for this date
-    const bookedSlots = await this.getBookedSlots(botId, date);
-    const bookedSet = new Set(bookedSlots.map((b) => b.timeSlot));
-
-    // Filter out booked slots
-    return slots.filter((slot) => !bookedSet.has(slot));
+  async getAvailableSlots(
+    botId: string,
+    date: string,
+    providerId?: string | null,
+    slotDurationMinutes?: number,
+  ): Promise<string[]> {
+    return this.availabilityService.getAvailableSlots(
+      botId,
+      date,
+      providerId,
+      slotDurationMinutes,
+    );
   }
 
   /**
@@ -322,25 +282,5 @@ export class BookingQueryService implements DashboardCapabilityProvider {
         return [];
     }
   }
-
-  /**
-   * Generate time slots between start and end times.
-   */
-  private generateTimeSlots(start: string, end: string, durationMinutes: number): string[] {
-    const slots: string[] = [];
-    const [startHour, startMin] = start.split(':').map(Number);
-    const [endHour, endMin] = end.split(':').map(Number);
-
-    let current = startHour * 60 + startMin;
-    const endTime = endHour * 60 + endMin;
-
-    while (current + durationMinutes <= endTime) {
-      const h = Math.floor(current / 60);
-      const m = current % 60;
-      slots.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
-      current += durationMinutes;
-    }
-
-    return slots;
-  }
 }
+
