@@ -29,13 +29,20 @@ import {
  * DESIGN DECISIONS:
  * - Weekly availability ONLY (no recurrence engine)
  * - Simple startTime/endTime per day
- * - Excluded dates as JSON array (rarely changed)
+ * - Excluded dates as JSON array (legacy — deprecated in favor of AvailabilityExclusion entity)
  * - Optional providerId (null = default provider)
  *
  * TEMPORAL INVARIANTS:
  * - startTime/endTime are in provider timezone (HH:MM format)
  * - timezone stored on Bot entity, not here
  * - No DST handling — timezone-aware library handles display
+ *
+ * DEPRECATION NOTE:
+ * The `excludedDates` field is DEPRECATED. Use the `AvailabilityExclusion` entity
+ * for multi-day exclusions (vacations, holidays). This field is kept for backward
+ * compatibility but should not be used for new implementations.
+ *
+ * CANONICAL: Per temporal-truth-contracts.md — availability is TRUTH.
  */
 @Entity('provider_availability')
 @Unique(['botId', 'providerId', 'weekday'])
@@ -69,6 +76,7 @@ export class ProviderAvailability {
   isWorkingDay: boolean;
 
   /**
+   * @deprecated Use AvailabilityExclusion entity for date-range exclusions
    * Excluded dates for this weekday.
    * Array of YYYY-MM-DD strings representing holidays/breaks.
    * Example: ['2024-12-25', '2025-01-01']

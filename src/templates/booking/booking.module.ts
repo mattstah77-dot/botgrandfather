@@ -5,6 +5,11 @@ import { BookingQueryService } from './booking-query.service';
 import { BookingLifecycleController } from './controllers/booking-lifecycle.controller';
 import { Booking } from './entities/booking.entity';
 import { ProviderAvailability } from './entities/provider-availability.entity';
+import { AvailabilityExclusion } from './entities/availability-exclusion.entity';
+import { BookingRepository } from './repositories/booking.repository';
+import { ProviderAvailabilityRepository } from './repositories/provider-availability.repository';
+import { AvailabilityExclusionRepository } from './repositories/availability-exclusion.repository';
+import { AvailabilityService } from './services/availability.service';
 import { Bot } from '../../bot/entities/bot.entity';
 import { UserState } from '../../bot/entities/user-state.entity';
 import { TelegramModule } from '../../telegram/telegram.module';
@@ -14,15 +19,24 @@ import { MiniAppAuthModule } from '../../miniapp/auth/miniapp-auth.module';
 import { OwnershipModule } from '../../ownership/ownership.module';
 
 /**
- * Booking Template Module — NestJS module for booking template.
+ * Booking Template Module — NestJS module for booking capability.
  *
  * ARCHITECTURAL PRINCIPLE:
  * This module is self-contained. It imports only universal platform modules.
  * No cross-template imports. No operational layer imports.
  *
- * NOTE: Runtime and Query services are separated.
+ * DOMAIN LAYER:
+ * - Entities: Booking, ProviderAvailability, AvailabilityExclusion
+ * - Repositories: BookingRepository, ProviderAvailabilityRepository, AvailabilityExclusionRepository
+ * - Services: AvailabilityService (computation from truth)
+ *
+ * RUNTIME LAYER:
  * - BookingRuntimeService: runtime conversation flow (used by TemplateFactory)
- * - BookingQueryService: operational data access (used by MiniappModule)
+ * - BookingHandler: Telegram webhook handler
+ *
+ * OPERATIONAL LAYER (exposed via BookingQueryService):
+ * - BookingQueryService: read-only data access (used by MiniappModule)
+ * - BookingLifecycleController: owner-triggered state transitions
  *
  * DI NOTE: TypeOrmModule.forFeature([Bot]) is required for
  * BookingQueryService.getAvailableSlots() to read bot config (working hours).
@@ -34,7 +48,13 @@ import { OwnershipModule } from '../../ownership/ownership.module';
  */
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Booking, ProviderAvailability, Bot, UserState]),
+    TypeOrmModule.forFeature([
+      Booking,
+      ProviderAvailability,
+      AvailabilityExclusion,
+      Bot,
+      UserState,
+    ]),
     TelegramModule,
     CustomerModule,
     AnalyticsModule,
@@ -42,7 +62,24 @@ import { OwnershipModule } from '../../ownership/ownership.module';
     OwnershipModule,
   ],
   controllers: [BookingLifecycleController],
-  providers: [BookingRuntimeService, BookingQueryService],
-  exports: [BookingRuntimeService, BookingQueryService],
+  providers: [
+    // Domain layer
+    BookingRepository,
+    ProviderAvailabilityRepository,
+    AvailabilityExclusionRepository,
+    AvailabilityService,
+    // Runtime layer
+    BookingRuntimeService,
+    // Operational layer
+    BookingQueryService,
+  ],
+  exports: [
+    BookingRuntimeService,
+    BookingQueryService,
+    AvailabilityService,
+    BookingRepository,
+    ProviderAvailabilityRepository,
+    AvailabilityExclusionRepository,
+  ],
 })
 export class BookingModule {}
