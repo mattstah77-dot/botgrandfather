@@ -55,7 +55,7 @@ export class Booking {
    * null = default provider (single-provider setup)
    * string = specific provider (multi-provider future)
    */
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   providerId: string | null;
 
   @Column()
