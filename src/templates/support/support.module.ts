@@ -8,6 +8,11 @@ import { Ticket } from './entities/ticket.entity';
 import { TicketMessage } from './entities/ticket-message.entity';
 import { Bot } from '../../bot/entities/bot.entity';
 import { Customer } from '../../customer/entities/customer.entity';
+import { TelegramModule } from '../../telegram/telegram.module';
+import { CustomerModule } from '../../customer/customer.module';
+import { AnalyticsModule } from '../../analytics/analytics.module';
+import { MiniAppAuthModule } from '../../miniapp/auth/miniapp-auth.module';
+import { OwnershipModule } from '../../ownership/ownership.module';
 
 /**
  * Support Module — Support Desk template.
@@ -28,11 +33,18 @@ import { Customer } from '../../customer/entities/customer.entity';
  * Support does NOT orchestrate CustomerModule.
  *
  * AUTH NOTE: MiniAppAuthModule and OwnershipModule are imported for
- * owner authentication and authorization.
+ * SupportLifecycleController and SupportDashboardController.
+ * This is a cross-cutting security concern, NOT an operational layer import.
+ * No circular dependencies exist.
  */
 @Module({
   imports: [
     TypeOrmModule.forFeature([Ticket, TicketMessage, Bot, Customer]),
+    TelegramModule,
+    CustomerModule,
+    AnalyticsModule,
+    MiniAppAuthModule,
+    OwnershipModule,
   ],
   controllers: [SupportLifecycleController, SupportDashboardController],
   providers: [SupportRuntimeService, SupportQueryService],
