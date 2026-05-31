@@ -31,7 +31,7 @@ export class Owner {
   @Column({ type: 'varchar', nullable: true })
   lastName: string | null;
 
-  @Column({ default: 'free' })
+  @Column({ type: 'varchar', default: 'free' })
   subscriptionPlan: string;
 
   @CreateDateColumn()

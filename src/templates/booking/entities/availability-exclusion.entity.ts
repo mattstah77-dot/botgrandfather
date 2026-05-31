@@ -39,7 +39,7 @@ export class AvailabilityExclusion {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
+  @Column({ type: 'varchar' })
   @Index()
   botId: string;
 
@@ -48,7 +48,7 @@ export class AvailabilityExclusion {
    * null = default provider (single-provider setup)
    * string = specific provider (multi-provider setup)
    */
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   providerId: string | null;
 
   /**

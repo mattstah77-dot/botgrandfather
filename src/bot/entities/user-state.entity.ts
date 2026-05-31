@@ -8,14 +8,14 @@ export class UserState {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
+  @Column({ type: 'varchar' })
   @Index()
   botId: string;
 
   @Column({ type: 'bigint' })
   userId: bigint;
 
-  @Column({ default: 'idle' })
+  @Column({ type: 'varchar', default: 'idle' })
   currentStep: string;
 
   @Column({ type: 'jsonb', default: {} })

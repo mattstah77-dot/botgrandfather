@@ -29,11 +29,11 @@ export class Ticket {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
+  @Column({ type: 'varchar' })
   @Index()
   botId: string;
 
-  @Column()
+  @Column({ type: 'varchar' })
   @Index()
   customerId: string;
 

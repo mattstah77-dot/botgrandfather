@@ -24,7 +24,7 @@ export class TicketMessage {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
+  @Column({ type: 'varchar' })
   @Index()
   ticketId: string;
 

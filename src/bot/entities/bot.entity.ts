@@ -9,16 +9,16 @@ export class Bot {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ select: false }) // Never select token by default; explicit opt-in only
+  @Column({ type: 'varchar', select: false }) // Never select token by default; explicit opt-in only
   token!: string;
 
-  @Column()
+  @Column({ type: 'varchar' })
   template!: string;
 
   @Column({ type: 'jsonb' })
   config!: Record<string, any>;
 
-  @Column({ unique: true })
+  @Column({ type: 'varchar', unique: true })
   webhookSecret!: string;
 
   @Column({ type: 'varchar', nullable: true })

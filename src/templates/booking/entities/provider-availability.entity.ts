@@ -51,7 +51,7 @@ export class ProviderAvailability {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
+  @Column({ type: 'varchar' })
   @Index()
   botId: string;
 
@@ -60,19 +60,19 @@ export class ProviderAvailability {
    * null = default provider (single-provider setup)
    * string = specific provider (multi-provider setup)
    */
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   providerId: string | null;
 
-  @Column()
+  @Column({ type: 'varchar' })
   weekday: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   startTime: string | null;  // HH:MM in provider timezone
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   endTime: string | null;  // HH:MM in provider timezone
 
-  @Column({ default: true })
+  @Column({ type: 'boolean', default: true })
   isWorkingDay: boolean;
 
   /**

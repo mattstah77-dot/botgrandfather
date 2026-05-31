@@ -17,14 +17,14 @@ export class AnalyticsEvent {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
+  @Column({ type: 'varchar' })
   @Index()
   botId: string;
 
   @Column({ type: 'varchar', nullable: true })
   ownerId: string | null;
 
-  @Column()
+  @Column({ type: 'varchar' })
   eventType: string;
 
   @Column({ type: 'jsonb', default: {} })

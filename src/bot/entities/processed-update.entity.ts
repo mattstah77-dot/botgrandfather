@@ -10,7 +10,7 @@ export class ProcessedUpdate {
   @Column({ type: 'bigint' })
   updateId: bigint;
 
-  @Column()
+  @Column({ type: 'varchar' })
   botId: string;
 
   @ManyToOne(() => Bot, { onDelete: 'CASCADE' })

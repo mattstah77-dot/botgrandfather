@@ -39,7 +39,7 @@ export class Booking {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
+  @Column({ type: 'varchar' })
   @Index()
   botId: string;
 
@@ -58,16 +58,16 @@ export class Booking {
   @Column({ type: 'varchar', nullable: true })
   providerId: string | null;
 
-  @Column()
+  @Column({ type: 'varchar' })
   serviceId: string;
 
-  @Column()
+  @Column({ type: 'varchar' })
   serviceName: string;
 
-  @Column()
+  @Column({ type: 'varchar' })
   date: string; // YYYY-MM-DD
 
-  @Column()
+  @Column({ type: 'varchar' })
   timeSlot: string; // HH:MM
 
   @Column({ type: 'int' })
