@@ -138,6 +138,7 @@ export const api = {
     upcomingBookings: number;
     completedBookings: number;
     cancelledBookings: number;
+    noShowBookings: number;
   }>(`/miniapp/bots/${botId}/bookings/metrics`),
 
   /** Get booking calendar projection */

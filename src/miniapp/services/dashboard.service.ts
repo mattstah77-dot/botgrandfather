@@ -12,14 +12,14 @@ import { DashboardCapabilityRegistry } from '../../dashboard/dashboard-capabilit
  * This service ONLY reads data from other services.
  * It does NOT contain business logic, runtime logic, or template logic.
  *
- * CAPABILITY AGGREGATION:
+ * TEMPLATE AGGREGATION:
  * Template-specific metrics come from DashboardCapabilityRegistry,
  * NOT from direct query service injection.
  *
  * WHY registry pattern:
- * - Adding a new capability does NOT require modifying this service
- * - DashboardService orchestrates aggregation, does NOT know individual capabilities
- * - Prevents god-class growth as capabilities multiply
+ * - Adding a new template does NOT require modifying this service
+ * - DashboardService orchestrates aggregation, does NOT know individual templates
+ * - Prevents god-class growth as templates multiply
  *
  * This service is the data aggregation layer for the Mini App.
  */
@@ -69,9 +69,9 @@ export class DashboardService {
    *
    * SCALABILITY: Uses single aggregated queries instead of N+1 per bot.
    *
-   * CAPABILITY AGGREGATION:
-   * Template-specific metrics aggregated from capability registry.
-   * Adding new capabilities does NOT require modifying this method.
+   * TEMPLATE AGGREGATION:
+   * Template-specific metrics aggregated from registry.
+   * Adding new templates does NOT require modifying this method.
    */
   async getOwnerStats(ownerId: string) {
     const bots = await this.botService.getOwnerBots(ownerId);
@@ -89,8 +89,8 @@ export class DashboardService {
     // Single query: all customer counts for all bots
     const customerCountsByBot = await this.customerService.countByStatusForBots(botIds);
 
-    // Aggregate capability-specific interactions from all registered providers
-    // This is the key improvement: no direct injection needed for new capabilities
+    // Aggregate template-specific interactions from all registered providers
+    // This is the key improvement: no direct injection needed for new templates
     let totalInteractions = 0;
     const capabilityProviders = this.capabilityRegistry.getAll();
     for (const provider of capabilityProviders) {
@@ -114,7 +114,7 @@ export class DashboardService {
    * Get stats for a specific bot.
    *
    * TEMPLATE ISOLATION:
-   * Template-specific counts aggregated from capability registry.
+   * Template-specific counts aggregated from registry.
    * BotService remains template-agnostic.
    */
   async getBotStats(botId: string) {
@@ -122,8 +122,8 @@ export class DashboardService {
     const statusCounts = await this.customerService.countByStatus(botId);
     const customerCount = Object.values(statusCounts).reduce((a, b) => a + b, 0);
 
-    // Aggregate capability-specific metrics from all registered providers
-    // This is the key improvement: no direct injection needed for new capabilities
+    // Aggregate template-specific metrics from all registered providers
+    // This is the key improvement: no direct injection needed for new templates
     const capabilityProviders = this.capabilityRegistry.getAll();
     const capabilityMetrics: Record<string, number> = {};
     for (const provider of capabilityProviders) {

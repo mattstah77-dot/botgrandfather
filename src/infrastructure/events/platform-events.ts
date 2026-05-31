@@ -8,7 +8,7 @@
  * - Dot notation only (booking.created, NOT booking:created)
  * - Past tense for facts (created, NOT create)
  * - Domain-first (customer.tag.added, NOT tag.customer.added)
- * - Capability-neutral where possible (conversion.completed, NOT booking.completed)
+ * - Template-neutral where possible (conversion.completed, NOT booking.completed)
  */
 
 export type PlatformEventType =
@@ -25,13 +25,13 @@ export type PlatformEventType =
   | 'customer.updated'
   | 'customer.converted'
   
-  // Booking capability events
+  // Booking template events
   | 'booking.created'
   | 'booking.confirmed'
   | 'booking.cancelled'
   | 'booking.rescheduled'
   
-  // Lead capability events
+  // Lead template events
   | 'lead.created'
   
   // Bot lifecycle (platform)

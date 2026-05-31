@@ -1098,6 +1098,137 @@ metadata: {
 
 ---
 
+## APPENDIX B — CANONICAL TERMINOLOGY
+
+### B.1 Template
+
+> A **Template** is a deployable business solution that owners instantiate as bots.
+
+- Templates live in `src/templates/{name}/`.
+- Templates implement `TemplateService` and register a `TemplateHandler` in `TemplateFactory`.
+- Templates register operational metadata via `OwnerModuleDefinition`.
+- Templates are isolated. No cross-template imports.
+
+**Examples:**
+- `lead-funnel` — collects leads through questions
+- `booking` — schedules appointments
+- `support` — manages support tickets
+
+**Future:** Templates may eventually implement one or more capabilities.
+
+### B.2 Capability
+
+> A **Capability** is a reusable business domain that multiple templates may implement.
+
+- Capabilities emerge from **proven repetition across templates**.
+- Capabilities are NOT introduced proactively.
+- Capabilities are NOT templates.
+
+**Examples of potential future capabilities:**
+- Scheduling (Booking, CRM, Salon templates)
+- Notifications (Booking, Shop, AI Assistant templates)
+- Payments (Marketplace, Shop templates)
+- Ticketing (Support, CRM templates)
+
+**Repetition Threshold:**
+```
+1 template implements scheduling → implementation (direct code)
+2 templates implement scheduling → observe pattern
+3+ templates implement scheduling → capability candidate
+```
+
+**Current Reality:**
+- Booking, Lead Funnel, Support are **templates**.
+- They are **not** capabilities.
+- No capability architecture exists yet because no business domain is repeated across 3+ templates.
+
+### B.3 Platform Service
+
+> A **Platform Service** is universal infrastructure used by all templates.
+
+- Platform services are **not** capabilities.
+- Platform services are **not** template-specific.
+- Every template uses them implicitly.
+
+**Examples:**
+- `CustomerService` — universal customer identity
+- `AnalyticsService` — generic event tracking
+- `TelegramService` — Telegram API integration
+- `OwnershipVerificationService` — multi-tenant security
+- `BillingService` — plan limits and quotas
+
+### B.4 Runtime
+
+> **Runtime** is the customer-facing execution layer.
+
+- Webhook processing
+- Template business logic execution
+- Customer conversation flows
+- State management (`UserState`)
+
+**Invariant:** Runtime NEVER depends on Operational layer.
+
+### B.5 Operational Surface
+
+> **Operational Surface** is the owner-facing observational and management layer.
+
+- Owner MiniApp dashboard
+- Bot overview and analytics
+- Settings and configuration
+- Customer lists and metrics
+
+**Invariant:** Operational Surface is observational only. It does NOT orchestrate runtime.
+
+### B.6 Domain
+
+> A **Domain** is a bounded context within a template.
+
+- Contains entities, repositories, and business rules.
+- Is specific to one template.
+- Does not leak into other templates.
+
+**Example:** The Booking domain contains `Booking`, `ProviderAvailability`, and `AvailabilityExclusion` entities.
+
+### B.7 Module (NestJS)
+
+> A **Module** is a NestJS DI container (`@Module()`).
+
+- This term is reserved for NestJS dependency injection ONLY.
+- Do NOT use "module" to mean metadata registry, operational definition, or capability grouping.
+
+### B.8 Critical Distinction: Template ≠ Capability
+
+**Current platform state:**
+```
+Template: booking        →  ONE template
+Template: lead-funnel    →  ONE template
+Template: support        →  ONE template
+
+Capability: scheduling   →  NOT YET (only Booking has it)
+Capability: ticketing    →  NOT YET (only Support has it)
+Capability: lead-capture →  NOT YET (only Lead Funnel has it)
+```
+
+**Why this matters:**
+- If we call Booking a "capability", we cannot later build a "Salon" template that ALSO does scheduling.
+- Salon would need to reuse the "scheduling" capability, but our vocabulary has no word for it.
+- Calling templates "capabilities" consumes the word before the concept is ready.
+
+**Rule:**
+> Use "template" for deployable products. Use "capability" only for reusable business domains shared by 3+ templates.
+
+### B.9 Repetition Ladder (MANDATORY)
+
+| Instances | Action | Example |
+|-----------|--------|---------|
+| 1 | Implement directly | Booking implements scheduling inline |
+| 2 | Watch for pattern | CRM also needs scheduling — observe duplication |
+| 3+ | Abstract as capability | Extract `SchedulingService` shared by Booking, CRM, Salon |
+
+**Never abstract before 3 proven instances.**
+
+---
+
 **This document is LAW.  
 Violations are NOT allowed.  
 Questions are encouraged.  

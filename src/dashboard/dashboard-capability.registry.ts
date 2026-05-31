@@ -5,43 +5,35 @@ import { LeadFunnelQueryService } from '../templates/lead-funnel/lead-funnel-que
 import { SupportQueryService } from '../templates/support/support-query.service';
 
 /**
- * DashboardCapabilityRegistry — explicit capability registration.
+ * DashboardCapabilityRegistry — explicit template provider registration.
  *
  * ARCHITECTURAL PRINCIPLE:
- * This is NOT dynamic discovery. It is NOT a plugin registry.
- * It is NOT metadata-driven. It is NOT auto-registration.
- *
- * It is: explicit constructor-based registration of known providers.
+ * This registry is the ONLY place that knows about all template query providers.
+ * It does NOT contain business logic. It does NOT query the database.
+ * It ONLY registers providers and routes calls to them.
  *
  * WHY explicit registration:
- * - No hidden dependencies
- * - No runtime magic
- * - Clear to new engineers: "these are the capabilities"
- * - Type-safe: TypeScript validates all providers at compile time
- * - Debuggable: set breakpoint in constructor, see all providers
- *
- * WHY NOT dynamic discovery:
- * - We have 3 capabilities, not 50
- * - Dynamic discovery adds complexity without benefit at this scale
- * - Reflection and decorators are framework-building, NOT platform development
- * - Explicit is better than implicit for monolithic clarity
+ * - No auto-discovery (avoids accidental coupling)
+ * - No decorators (avoids magic)
+ * - No reflection (avoids implicit dependencies)
+ * - Adding a template requires ONE line change here
  *
  * SCALING:
- * Adding a new capability requires:
+ * Adding a new template requires:
  * 1. Create QueryService implementing DashboardCapabilityProvider
  * 2. Add it to DashboardCapabilityRegistry constructor
  * 3. Add it to DashboardModule providers
  *
- * DashboardService does NOT change.
+ * This is the ONLY place that needs modification for new templates.
  */
 @Injectable()
 export class DashboardCapabilityRegistry {
   private readonly providers = new Map<string, DashboardCapabilityProvider>();
 
   constructor(
-    // EXPLICIT registration of all capability providers.
-    // Each new capability adds ONE parameter here.
-    // This is the ONLY place that knows about all capabilities.
+    // EXPLICIT registration of all template query providers.
+    // Each new template adds ONE parameter here.
+    // This is the ONLY place that knows about all templates.
     bookingQueryService: BookingQueryService,
     leadFunnelQueryService: LeadFunnelQueryService,
     supportQueryService: SupportQueryService,
@@ -55,36 +47,36 @@ export class DashboardCapabilityRegistry {
     const key = provider.getCapabilityKey();
     if (this.providers.has(key)) {
       throw new Error(
-        `Duplicate capability provider registered: ${key}. ` +
-          'Each capability key must be unique.',
+        `Duplicate template provider registered: ${key}. ` +
+          'Each template key must be unique.',
       );
     }
     this.providers.set(key, provider);
   }
 
   /**
-   * Get all registered capability providers.
+   * Get all registered template providers.
    */
   getAll(): DashboardCapabilityProvider[] {
     return [...this.providers.values()];
   }
 
   /**
-   * Get a specific provider by capability key.
+   * Get a specific provider by template key.
    */
   get(key: string): DashboardCapabilityProvider | undefined {
     return this.providers.get(key);
   }
 
   /**
-   * Get all registered capability keys.
+   * Get all registered template keys.
    */
   getKeys(): string[] {
     return [...this.providers.keys()];
   }
 
   /**
-   * Check if a capability is registered.
+   * Check if a template is registered.
    */
   has(key: string): boolean {
     return this.providers.has(key);

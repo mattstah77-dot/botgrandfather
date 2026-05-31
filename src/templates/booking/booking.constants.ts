@@ -1,8 +1,8 @@
 /**
- * Booking Capability — Canonical Constants.
+ * Booking Template — Canonical Constants.
  *
  * ARCHITECTURAL PRINCIPLE:
- * Constants are explicit, typed, and local to booking capability.
+ * Constants are explicit, typed, and local to booking template.
  * No generic abstractions. No external dependencies.
  */
 

@@ -150,20 +150,24 @@ export class CustomerService {
     page: number = 1,
     limit: number = 20,
   ): Promise<{ items: Customer[]; pagination: { page: number; limit: number; total: number; pages: number } }> {
-    const skip = (page - 1) * limit;
+    // DEFENSE: Validate pagination bounds to prevent DoS and invalid queries.
+    const safePage = Math.max(1, page);
+    const safeLimit = Math.min(Math.max(1, limit), 100);
+
+    const skip = (safePage - 1) * safeLimit;
 
     const [items, total] = await this.customerRepository.findAndCount({
       where: { botId },
       order: { createdAt: 'DESC' },
       skip,
-      take: limit,
+      take: safeLimit,
     });
 
-    const pages = Math.ceil(total / limit);
+    const pages = Math.ceil(total / safeLimit);
 
     return {
       items,
-      pagination: { page, limit, total, pages },
+      pagination: { page: safePage, limit: safeLimit, total, pages },
     };
   }
 

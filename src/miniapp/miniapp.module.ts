@@ -12,7 +12,7 @@ import { OwnershipModule } from '../ownership/ownership.module';
 import { BotModule } from '../bot/bot.module';
 import { CustomerModule } from '../customer/customer.module';
 import { AnalyticsModule } from '../analytics/analytics.module';
-import { TemplateModule } from '../templates/template.module';
+import { BookingModule } from '../templates/booking/booking.module';
 import { DashboardModule } from '../dashboard/dashboard.module';
 import { Bot } from '../bot/entities/bot.entity';
 
@@ -40,6 +40,11 @@ import { Bot } from '../bot/entities/bot.entity';
  *   aggregation). SAFE because BotService is template-agnostic after
  *   stabilization. Does NOT create cycles — OwnerModule no longer
  *   imports BotModule.
+ * - BookingModule: imported for BookingDashboardController (operational
+ *   query endpoints). BookingRuntimeService is NOT used in this module.
+ * - TemplateModule is NOT imported here. TemplateFactory (runtime)
+ *   is owned by WebhookModule. Operational layer has no runtime
+ *   dependency.
  *
  * NOT:
  * - Runtime engine
@@ -54,7 +59,7 @@ import { Bot } from '../bot/entities/bot.entity';
     CustomerModule,
     AnalyticsModule,
     OwnershipModule,
-    TemplateModule,
+    BookingModule,
     MiniAppAuthModule,
     DashboardModule,
   ],

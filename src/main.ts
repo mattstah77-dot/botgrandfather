@@ -5,6 +5,13 @@ import { PORT } from './config/env.config';
 import { join } from 'path';
 import * as express from 'express';
 
+// Global BigInt JSON serialization support.
+// CRITICAL: PostgreSQL bigint columns (telegramUserId, userId) cannot be
+// serialized by JSON.stringify without this. Applies to ALL bigint values.
+(BigInt.prototype as any).toJSON = function () {
+  return this.toString();
+};
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   

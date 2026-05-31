@@ -1,35 +1,19 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { Booking } from '../../templates/booking/entities/booking.entity';
 import { Bot } from '../../bot/entities/bot.entity';
+import { Customer } from '../../customer/entities/customer.entity';
 import { BookingQueryService } from '../../templates/booking/booking-query.service';
 import { BookingValidationService, BookingValidationError } from '../../templates/booking/services/booking-validation.service';
 import { CustomerService } from '../../customer/customer.service';
 import { AnalyticsService } from '../../analytics/analytics.service';
 import { TelegramService } from '../../telegram/telegram.service';
+import { BookingConfig } from '../../templates/booking/booking.types';
 import { WEBHOOK_HOST } from '../../config/env.config';
 
-/**
- * CustomerBookingService — customer-facing booking operations for Mini App.
- *
- * RESPONSIBILITY:
- * - Read available slots (delegates to BookingQueryService)
- * - Create bookings from Mini App (NOT from chat flow)
- * - Retrieve customer bookings
- *
- * DIFFERENT from BookingRuntimeService:
- * - BookingRuntimeService: Telegram chat flow, user state, conversation
- * - CustomerBookingService: HTTP API for Mini App, no Telegram interaction
- *
- * DIFFERENT from BookingQueryService:
- * - BookingQueryService: read-only queries
- * - CustomerBookingService: writes (create booking)
- *
- * ARCHITECTURAL NOTE:
- * This service is isolated to the Customer MiniApp layer.
- * It does NOT handle Telegram messages, runtime state, or owner operations.
- */
+// ... existing comments ...
+
 @Injectable()
 export class CustomerBookingService {
   constructor(
@@ -42,6 +26,7 @@ export class CustomerBookingService {
     private readonly customerService: CustomerService,
     private readonly analyticsService: AnalyticsService,
     private readonly telegramService: TelegramService,
+    private readonly dataSource: DataSource,
   ) {}
 
   /**
@@ -132,25 +117,53 @@ export class CustomerBookingService {
       throw error;
     }
 
-    // Create booking
-    const booking = this.bookingRepository.create({
-      botId,
-      userId: BigInt(telegramUserId),
-      username: customer.username,
-      serviceId,
-      serviceName: service.name,
-      date,
-      timeSlot,
-      durationMinutes: service.durationMinutes,
-      price: service.price ?? null,
-      status: 'pending',
-      timezone: (bot?.config?.timezone as string) || 'UTC',
+    // ATOMIC: Booking creation + customer conversion must succeed or fail together.
+    // Analytics and Telegram are side effects — executed after transaction commit.
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    let savedBooking: Booking;
+
+    try {
+      const booking = this.bookingRepository.create({
+        botId,
+        userId: BigInt(telegramUserId),
+        username: customer.username,
+        serviceId,
+        serviceName: service.name,
+        date,
+        timeSlot,
+        durationMinutes: service.durationMinutes,
+        price: service.price ?? null,
+        status: 'pending',
+        timezone: (bot?.config?.timezone as string) || 'UTC',
+      });
+
+      savedBooking = await queryRunner.manager.save(booking);
+
+      // Mark customer as converted — using queryRunner for atomicity
+      await queryRunner.manager.update(
+        Customer,
+        { botId, telegramUserId: BigInt(userIdNum) },
+        { status: 'converted' },
+      );
+
+      await queryRunner.commitTransaction();
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
+
+    // SIDE EFFECTS: Executed after successful transaction. Failures do not rollback booking.
+
+    // Emit customer.converted event (bypassed CustomerService due to transaction)
+    await this.analyticsService.trackEvent(botId, 'customer.converted', {
+      userId: userIdNum,
+      source: 'miniapp',
     });
-
-    const savedBooking = await this.bookingRepository.save(booking);
-
-    // Mark customer as converted
-    await this.customerService.updateStatus(botId, userIdNum, 'converted');
 
     // CANONICAL: Emit booking.created event per temporal semantics
     await this.analyticsService.trackEvent(
@@ -193,6 +206,31 @@ export class CustomerBookingService {
           ],
         },
       );
+
+      // Notify owner (parity with runtime flow)
+      const bookingConfig = bot.config as BookingConfig | undefined;
+      const ownerChatId = bookingConfig?.ownerChatId;
+      if (ownerChatId) {
+        const ownerChatIdNum = parseInt(ownerChatId, 10);
+        if (!isNaN(ownerChatIdNum)) {
+          const lines: string[] = ['📅 New Booking (MiniApp)'];
+          lines.push('');
+          lines.push(`Service: ${service.name}`);
+          lines.push(`Date: ${date}`);
+          lines.push(`Time: ${timeSlot}`);
+          if (service.price) {
+            lines.push(`Price: $${service.price}`);
+          }
+          lines.push('');
+          lines.push(`User ID: ${userIdNum}`);
+
+          await this.telegramService.sendMessage(
+            bot.token,
+            ownerChatIdNum,
+            lines.join('\n'),
+          );
+        }
+      }
     }
 
     return savedBooking;

@@ -55,7 +55,7 @@ export class BookingDashboardController {
   /**
    * GET /miniapp/bots/:id/bookings/metrics
    *
-   * Dashboard metrics for booking capability.
+   * Dashboard metrics for booking template.
    * Returns BookingDashboardProjection — simple recomputation only.
    */
   @Get(':id/bookings/metrics')
@@ -79,12 +79,17 @@ export class BookingDashboardController {
     @Query('to') to: string,
   ): Promise<BookingCalendarProjection[]> {
     // Default to current month if no range provided
+    // FIX: Use UTC consistently to avoid timezone drift in non-UTC environments.
     const today = new Date();
-    const defaultFrom = new Date(today.getFullYear(), today.getMonth(), 1);
-    const defaultTo = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    const year = today.getFullYear();
+    const month = today.getMonth() + 1; // 1-based
 
-    const resolvedFrom = from || defaultFrom.toISOString().split('T')[0];
-    const resolvedTo = to || defaultTo.toISOString().split('T')[0];
+    const defaultFrom = `${year}-${String(month).padStart(2, '0')}-01`;
+    const lastDayOfMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+    const defaultTo = `${year}-${String(month).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
+
+    const resolvedFrom = from || defaultFrom;
+    const resolvedTo = to || defaultTo;
 
     return this.bookingQueryService.getCalendarProjection(botId, resolvedFrom, resolvedTo);
   }
@@ -109,6 +114,7 @@ export class BookingDashboardController {
 
     return {
       ...booking,
+      userId: String(booking.userId),
       availableActions,
     };
   }

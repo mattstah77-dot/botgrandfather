@@ -240,9 +240,9 @@ export class BotService {
    * Get lightweight overview for a bot.
    * Returns basic bot info + universal counts only.
    *
-   * CAPABILITY NEUTRALITY:
+   * TEMPLATE NEUTRALITY:
    * BotService is template-agnostic. It does NOT return template-specific
-   * metrics (leads, bookings, orders). Those come from capability providers.
+   * metrics (leads, bookings, orders). Those come from template query providers.
    *
    * Returns: customers (universal), events (universal), bot metadata.
    */

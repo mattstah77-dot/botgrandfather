@@ -156,7 +156,9 @@ export class BookingValidationService {
     // 4. Reschedule window (if confirmed)
     if (booking.status === BOOKING_STATUSES.CONFIRMED) {
       const now = new Date();
-      const bookingDateTime = new Date(`${newDate}T${newTime}:00`);
+      // CRITICAL: Check window against CURRENT booking date/time, NOT new date/time.
+      // Reschedule window means "cannot reschedule if appointment is within X hours".
+      const bookingDateTime = new Date(`${booking.date}T${booking.timeSlot}:00`);
       const hoursUntil =
         (bookingDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
 

@@ -8,7 +8,7 @@ import {
 } from 'typeorm';
 
 /**
- * Booking entity — canonical temporal record for the booking capability.
+ * Booking entity — canonical temporal record for the booking template.
  *
  * ARCHITECTURAL PRINCIPLE:
  * Booking is template-specific data. It references users via botId + userId

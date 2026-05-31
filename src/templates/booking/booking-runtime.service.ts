@@ -9,6 +9,7 @@ import { CustomerService } from '../../customer/customer.service';
 import { AnalyticsService } from '../../analytics/analytics.service';
 import { Booking } from './entities/booking.entity';
 import { BookingConfig, BookingProgress } from './booking.types';
+import { BOOKING_DEFAULTS } from './booking.constants';
 import { BookingQueryService } from './booking-query.service';
 import { WEBHOOK_HOST } from '../../config/env.config';
 import { Bot } from '../../bot/entities/bot.entity';
@@ -246,7 +247,7 @@ export class BookingRuntimeService implements TemplateService {
     }
 
     const buttons = dates.map((date) => {
-      const displayDate = new Date(date).toLocaleDateString('en-US', {
+      const displayDate = new Date(date + 'T00:00:00').toLocaleDateString('en-US', {
         weekday: 'short',
         month: 'short',
         day: 'numeric',
@@ -315,7 +316,25 @@ export class BookingRuntimeService implements TemplateService {
     const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
     const dayConfig = config.workingHours[dayNames[dayOfWeek]];
 
-    if (!dayConfig || !dayConfig.enabled || !dayConfig.slots || dayConfig.slots.length === 0) {
+    // CRITICAL FIX: Generate slots from startTime/endTime instead of deprecated dayConfig.slots.
+    // WorkingHours.slots is deprecated; startTime/endTime is the canonical source of truth.
+    if (!dayConfig || !dayConfig.enabled || !dayConfig.startTime || !dayConfig.endTime) {
+      await this.telegramService.sendMessage(
+        context.botToken,
+        context.chatId,
+        'Sorry, no available slots for this date. Please select another date.',
+      );
+      return;
+    }
+
+    const slotDurationMinutes = config.slotDurationMinutes ?? BOOKING_DEFAULTS.SLOT_DURATION_MINUTES;
+    const slots = this.generateSlotsFromWorkingHours(
+      dayConfig.startTime,
+      dayConfig.endTime,
+      slotDurationMinutes,
+    );
+
+    if (slots.length === 0) {
       await this.telegramService.sendMessage(
         context.botToken,
         context.chatId,
@@ -330,7 +349,7 @@ export class BookingRuntimeService implements TemplateService {
       selectedDate: date,
     });
 
-    await this.sendTimeSelection(context, config, date, dayConfig.slots, now);
+    await this.sendTimeSelection(context, config, date, slots, now);
   }
 
   // ─── Time Selection ───────────────────────────────────────────
@@ -348,18 +367,21 @@ export class BookingRuntimeService implements TemplateService {
     // CANONICAL: Minimum notice period filter (Section 3)
     const minimumNoticeHours = config.minimumNoticeHours ?? 2;
     const nowDate = now ?? new Date();
-    const selectedDate = new Date(date + 'T00:00:00');
-    const today = new Date(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate());
-    
-    // If booking for today, filter out slots that are within minimum notice period
+
+    // Compute the earliest allowable appointment datetime
+    const minAppointmentTime = new Date(nowDate);
+    minAppointmentTime.setHours(minAppointmentTime.getHours() + minimumNoticeHours);
+    const minDateStr = minAppointmentTime.toISOString().split('T')[0];
+    const minTimeStr = `${String(minAppointmentTime.getHours()).padStart(2, '0')}:${String(minAppointmentTime.getMinutes()).padStart(2, '0')}`;
+
     let availableSlots = slots.filter((slot) => slot.time && !bookedTimes.has(slot.time));
     
-    if (selectedDate.getTime() === today.getTime()) {
-      const minTime = new Date(nowDate);
-      minTime.setHours(minTime.getHours() + minimumNoticeHours);
-      const minTimeString = `${String(minTime.getHours()).padStart(2, '0')}:${String(minTime.getMinutes()).padStart(2, '0')}`;
-      availableSlots = availableSlots.filter((slot) => slot.time >= minTimeString);
-    }
+    // Filter out slots before minimum notice period (any date, not just today)
+    availableSlots = availableSlots.filter((slot) => {
+      if (date < minDateStr) return false;
+      if (date === minDateStr && slot.time < minTimeStr) return false;
+      return true;
+    });
 
     if (availableSlots.length === 0) {
       await this.telegramService.sendMessage(
@@ -551,6 +573,14 @@ export class BookingRuntimeService implements TemplateService {
       await queryRunner.release();
     }
 
+    // SIDE EFFECTS: Executed after successful transaction. Failures do not rollback booking.
+
+    // Emit customer.converted event (bypassed CustomerService due to transaction)
+    await this.analyticsService.trackEvent(context.botId, 'customer.converted', {
+      userId: context.userId,
+      source: 'runtime',
+    });
+
     await this.analyticsService.trackEvent(context.botId, 'session.completed', {
       template: 'booking',
       userId: context.userId,
@@ -708,9 +738,9 @@ export class BookingRuntimeService implements TemplateService {
 
   /**
    * Confirm a pending booking (owner action).
-   * 
+   *
    * CANONICAL: booking.confirmed event per temporal semantics §6.
-   * 
+   *
    * @param botId - Bot ID (ownership verified by caller)
    * @param bookingId - Booking ID
    * @returns Updated booking
@@ -838,14 +868,21 @@ export class BookingRuntimeService implements TemplateService {
     booking.status = 'no-show';
     await this.bookingRepository.save(booking);
 
+    // Emit canonical event
+    await this.analyticsService.trackEvent(botId, 'booking.no-show', {
+      template: 'booking',
+      bookingId,
+      userId: Number(booking.userId),
+    });
+
     return booking;
   }
 
   /**
    * Reschedule a booking (owner action).
-   * 
+   *
    * CANONICAL: booking.rescheduled event per temporal semantics §6.
-   * 
+   *
    * Validates:
    * - New slot is available
    * - Cancellation/reschedule window (if applicable)
@@ -897,7 +934,9 @@ export class BookingRuntimeService implements TemplateService {
       const windowHours = config.rescheduleWindowHours ?? 24;
       
       const now = new Date();
-      const bookingDateTime = this.parseDateTime(newDate, newTime, booking.timezone);
+      // CRITICAL FIX: Check window against CURRENT booking date/time, NOT new date/time.
+      // Reschedule window means "cannot reschedule if appointment is within X hours".
+      const bookingDateTime = this.parseDateTime(booking.date, booking.timeSlot, booking.timezone);
       const hoursUntil = Math.max(0, (bookingDateTime.getTime() - now.getTime()) / (1000 * 60 * 60));
       
       if (hoursUntil < windowHours) {
@@ -952,6 +991,37 @@ export class BookingRuntimeService implements TemplateService {
     // Simple parsing (assumes timezone is UTC or server handles conversion)
     const dateTimeStr = `${date}T${time}:00`;
     return new Date(dateTimeStr);
+  }
+
+  /**
+   * Generate time slots from working hours configuration.
+   *
+   * CRITICAL: This replaces the deprecated WorkingHours.slots field.
+   * startTime/endTime is the canonical source of truth.
+   */
+  private generateSlotsFromWorkingHours(
+    startTime: string,
+    endTime: string,
+    slotDurationMinutes: number,
+  ): { time: string; durationMinutes: number }[] {
+    const slots: { time: string; durationMinutes: number }[] = [];
+    const [startHour, startMin] = startTime.split(':').map(Number);
+    const [endHour, endMin] = endTime.split(':').map(Number);
+
+    let current = startHour * 60 + startMin;
+    const end = endHour * 60 + endMin;
+
+    while (current + slotDurationMinutes <= end) {
+      const h = Math.floor(current / 60);
+      const m = current % 60;
+      slots.push({
+        time: `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`,
+        durationMinutes: slotDurationMinutes,
+      });
+      current += slotDurationMinutes;
+    }
+
+    return slots;
   }
 }
 

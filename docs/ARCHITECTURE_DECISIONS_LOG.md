@@ -730,6 +730,54 @@ Validate `auth_date` in Telegram initData, reject if older than 1 hour.
 
 ---
 
+## PHASE 18: CONCEPTUAL ARCHITECTURE STABILIZATION
+
+**Date:** Post-Audit Stabilization Sprint  
+**Decision:** Template ≠ Capability — Canonical Terminology Enforcement
+
+**What Was Decided:**
+Explicitly separate the concepts of **Template** and **Capability** in platform vocabulary, documentation, and mental model.
+
+**Why:**
+- Audits revealed terminology drift: Booking, Lead Funnel, Support were being called "capabilities" in code comments, registry names, and audit reports.
+- In reality, they are **templates** (deployable products).
+- A **capability** is a reusable business domain (scheduling, ticketing, payments) that emerges only when 3+ templates share identical business logic.
+- Conflating the two terms consumes the word "capability" before the concept is ready, blocking future ecosystem evolution.
+
+**Risk Solved:**
+- Prevented mental model corruption that would block multi-capability templates (e.g., "Salon" = scheduling + CRM + notifications).
+- Prevented premature capability abstraction.
+- Prevented vocabulary confusion in future marketplace documentation.
+
+**Future Direction Protected:**
+- When 3+ templates share scheduling logic, "Scheduling" can be extracted as a true capability.
+- Templates can be described as "implements [capability list]" in marketplace.
+- Platform vocabulary scales to ecosystem phase.
+
+**Anti-Pattern Prevented:**
+```typescript
+// ❌ FORBIDDEN — calling templates "capabilities"
+// In comments, registry names, documentation:
+// "Booking capability", "Lead Funnel capability"
+
+// ✅ CORRECT — precise terminology
+// "Booking template" — deployable product
+// "Scheduling capability" — reusable domain (when 3+ templates share it)
+```
+
+**Canonical Definitions Added to ARCHITECTURAL_INVARIANTS.md:**
+- **Template:** A deployable business solution. Examples: Booking, Lead Funnel, Support.
+- **Capability:** A reusable business domain. Examples: Scheduling, Ticketing, Payments. Emerges from 3+ template repetitions.
+- **Platform Service:** Universal infrastructure. Examples: Customer Layer, Analytics Layer.
+- **Repetition Ladder:** 1 = implement, 2 = watch, 3+ = capability candidate.
+
+**Evidence:**
+- `docs/ARCHITECTURAL_INVARIANTS.md` — APPENDIX B: Canonical Terminology
+- `src/templates/booking/booking.module.ts` — correctly labeled "Booking Template Module"
+- `src/templates/lead-funnel/lead-funnel.module.ts` — correctly labeled "Lead Funnel Module"
+
+---
+
 ## SUMMARY OF DECISIONS
 
 | Phase | Decision | Status |
@@ -752,6 +800,7 @@ Validate `auth_date` in Telegram initData, reject if older than 1 hour.
 | 15 | Capability-based billing | ✅ Complete |
 | 16 | InitData replay protection | ✅ Complete |
 | 17 | Circular dependency fix | ✅ Complete |
+| 18 | Template ≠ Capability terminology | ✅ Complete |
 
 ---
 

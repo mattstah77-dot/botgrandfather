@@ -20,7 +20,7 @@ import { MiniAppAuthModule } from '../../miniapp/auth/miniapp-auth.module';
 import { OwnershipModule } from '../../ownership/ownership.module';
 
 /**
- * Booking Template Module — NestJS module for booking capability.
+ * Booking Template Module — NestJS module for booking template.
  *
  * ARCHITECTURAL PRINCIPLE:
  * This module is self-contained. It imports only universal platform modules.

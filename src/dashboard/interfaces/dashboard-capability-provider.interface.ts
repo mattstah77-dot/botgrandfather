@@ -2,15 +2,15 @@
  * DashboardCapabilityProvider — lightweight operational query interface.
  *
  * ARCHITECTURAL PRINCIPLE:
- * Each template capability exposes a read-only provider for dashboard aggregation.
+ * Each template exposes a read-only provider for dashboard aggregation.
  * This is NOT a plugin interface, NOT a framework contract, NOT dynamic discovery.
  *
  * It is ONLY: an internal operational composition boundary.
  *
  * PURPOSE:
  * - Prevent DashboardService god-class growth
- * - Keep capability aggregation explicit and composable
- * - Allow new capabilities to register WITHOUT modifying DashboardService
+ * - Keep template aggregation explicit and composable
+ * - Allow new templates to register WITHOUT modifying DashboardService
  *
  * CONSTRAINTS:
  * - Read-only. Providers MUST NOT mutate runtime state.
@@ -20,7 +20,7 @@
  */
 
 export interface CapabilityMetrics {
-  /** Capability identifier (e.g., 'booking', 'lead-funnel') */
+  /** Template identifier (e.g., 'booking', 'lead-funnel') */
   capability: string;
 
   /** Primary metric (total count for this capability) */

@@ -22,7 +22,7 @@ import {
  * - Read-only queries for Mini App dashboards
  * - Booking lists, counts, calendar data
  * - Slot availability checks (delegates to AvailabilityService for truth-based computation)
- * - Dashboard capability metrics (implements DashboardCapabilityProvider)
+ * - Dashboard template metrics (implements DashboardCapabilityProvider)
  * - Operational projections (BookingOperationalProjection, BookingDashboardProjection, BookingCalendarProjection)
  *
  * DOES NOT:
@@ -111,7 +111,11 @@ export class BookingQueryService implements DashboardCapabilityProvider {
     search?: string,
     sort?: string,
   ): Promise<{ items: Booking[]; pagination: { page: number; limit: number; total: number; pages: number } }> {
-    const skip = (page - 1) * limit;
+    // DEFENSE: Validate pagination bounds to prevent DoS and invalid queries.
+    const safePage = Math.max(1, page);
+    const safeLimit = Math.min(Math.max(1, limit), 100);
+
+    const skip = (safePage - 1) * safeLimit;
 
     const queryBuilder = this.bookingRepository.createQueryBuilder('b')
       .where('b.botId = :botId', { botId });
@@ -122,7 +126,7 @@ export class BookingQueryService implements DashboardCapabilityProvider {
 
     if (search) {
       queryBuilder.andWhere(
-        '(LOWER(b.serviceName) LIKE :search OR LOWER(b.username) LIKE :search)',
+        '(LOWER(b.serviceName) LIKE :search OR LOWER(COALESCE(b.username, \'\')) LIKE :search)',
         { search: `%${search.toLowerCase()}%` },
       );
     }
@@ -135,15 +139,15 @@ export class BookingQueryService implements DashboardCapabilityProvider {
       queryBuilder.orderBy('b.date', 'DESC').addOrderBy('b.timeSlot', 'DESC');
     }
 
-    queryBuilder.skip(skip).take(limit);
+    queryBuilder.skip(skip).take(safeLimit);
 
     const [items, total] = await queryBuilder.getManyAndCount();
 
-    const pages = Math.ceil(total / limit);
+    const pages = Math.ceil(total / safeLimit);
 
     return {
       items,
-      pagination: { page, limit, total, pages },
+      pagination: { page: safePage, limit: safeLimit, total, pages },
     };
   }
 
@@ -248,7 +252,13 @@ export class BookingQueryService implements DashboardCapabilityProvider {
       .groupBy('b.status')
       .getRawMany();
 
-    const counts: Record<string, number> = {};
+    const counts: Record<string, number> = {
+      pending: 0,
+      confirmed: 0,
+      cancelled: 0,
+      completed: 0,
+      'no-show': 0,
+    };
     for (const row of results) {
       counts[row.status] = parseInt(row.count, 10);
     }
@@ -329,13 +339,14 @@ export class BookingQueryService implements DashboardCapabilityProvider {
   async getDashboardMetrics(botId: string): Promise<BookingDashboardProjection> {
     const today = new Date().toISOString().split('T')[0];
 
-    const [totalBookings, upcomingBookings, completedBookings, cancelledBookings] = await Promise.all([
+    const [totalBookings, upcomingBookings, completedBookings, cancelledBookings, noShowBookings] = await Promise.all([
       this.bookingRepository.count({ where: { botId } }),
       this.bookingRepository.count({
         where: { botId, date: MoreThanOrEqual(today), status: In(['pending', 'confirmed']) },
       }),
       this.bookingRepository.count({ where: { botId, status: 'completed' } }),
       this.bookingRepository.count({ where: { botId, status: 'cancelled' } }),
+      this.bookingRepository.count({ where: { botId, status: 'no-show' } }),
     ]);
 
     return {
@@ -343,6 +354,7 @@ export class BookingQueryService implements DashboardCapabilityProvider {
       upcomingBookings,
       completedBookings,
       cancelledBookings,
+      noShowBookings,
     };
   }
 

@@ -166,15 +166,9 @@ export class AvailabilityService {
    * Get day of week from date string (YYYY-MM-DD).
    */
   private getDayOfWeek(date: string): ProviderAvailability['weekday'] {
-    const dayIndex = new Date(date).getDay();
+    const dayIndex = new Date(date + 'T00:00:00').getDay();
     const days = [
-      'sunday',
-      'monday',
-      'tuesday',
-      'wednesday',
-      'thursday',
-      'friday',
-      'saturday',
+      'sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday',
     ] as const;
     return days[dayIndex] as ProviderAvailability['weekday'];
   }

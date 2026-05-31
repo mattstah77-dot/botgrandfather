@@ -21,7 +21,7 @@ import {
  * RESPONSIBILITY:
  * - Read-only queries for Mini App dashboards
  * - Ticket lists, counts, message history
- * - Dashboard capability metrics (implements DashboardCapabilityProvider)
+ * - Dashboard template metrics (implements DashboardCapabilityProvider)
  *
  * DOES NOT:
  * - Handle Telegram conversations

@@ -1,7 +1,7 @@
 /**
  * Support Desk Template Types
  *
- * Template-specific types for the support desk capability.
+ * Template-specific types for the support desk template.
  * NO universal abstractions. NO shared ticket types.
  */
 

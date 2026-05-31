@@ -9,33 +9,10 @@ import {
 import { MiniAppAuthGuard } from '../../../miniapp/auth/miniapp-auth.guard';
 import { BotOwnershipGuard } from '../../../ownership/bot-ownership.guard';
 import { BookingRuntimeService } from '../booking-runtime.service';
+import { Booking } from '../entities/booking.entity';
 
-/**
- * Booking Lifecycle Controller — runtime endpoints for owner-triggered transitions.
- *
- * ARCHITECTURAL PRINCIPLE:
- * These endpoints execute booking business logic (state transitions).
- * They are NOT operational read-only endpoints.
- * They live in the runtime module (templates/booking/), NOT the miniapp module.
- *
- * WHY runtime module:
- * - Booking lifecycle is business logic, not operational visibility.
- * - Operational layer (miniapp) is read-only per ROS.1 and temporal semantics §8.
- * - Owner-triggered transitions are still runtime behavior.
- *
- * SECURITY:
- * - MiniAppAuthGuard: validates Telegram initData
- * - BotOwnershipGuard: verifies owner owns the bot
- * - BookingRuntimeService: verifies booking belongs to bot
- * No cross-tenant operations possible.
- *
- * CANONICAL TRANSITIONS (per booking-temporal-semantics.md §6):
- * - pending → confirmed
- * - pending → cancelled
- * - confirmed → cancelled
- * - confirmed → completed
- * - confirmed → no-show
- */
+// ... existing comments ...
+
 @Controller('miniapp/bots')
 @UseGuards(MiniAppAuthGuard, BotOwnershipGuard)
 export class BookingLifecycleController {
@@ -44,11 +21,30 @@ export class BookingLifecycleController {
   ) {}
 
   /**
-   * POST /miniapp/bots/:id/bookings/:bookingId/confirm
-   *
-   * Confirm a pending booking.
-   * Allowed: pending → confirmed
+   * Serialize booking for API response.
+   * CRITICAL: bigint userId must be converted to string for JSON serialization.
    */
+  private serializeBooking(booking: Booking): Record<string, unknown> {
+    return {
+      id: booking.id,
+      botId: booking.botId,
+      userId: String(booking.userId),
+      username: booking.username,
+      providerId: booking.providerId,
+      serviceId: booking.serviceId,
+      serviceName: booking.serviceName,
+      date: booking.date,
+      timeSlot: booking.timeSlot,
+      durationMinutes: booking.durationMinutes,
+      price: booking.price,
+      status: booking.status,
+      notes: booking.notes,
+      timezone: booking.timezone,
+      createdAt: booking.createdAt,
+      updatedAt: booking.updatedAt,
+    };
+  }
+
   @Post(':id/bookings/:bookingId/confirm')
   async confirmBooking(
     @Param('id') botId: string,
@@ -59,7 +55,7 @@ export class BookingLifecycleController {
         botId,
         bookingId,
       );
-      return { success: true, booking };
+      return { success: true, booking: this.serializeBooking(booking) };
     } catch (error) {
       throw new BadRequestException(
         (error as Error).message || 'Failed to confirm booking',
@@ -67,12 +63,6 @@ export class BookingLifecycleController {
     }
   }
 
-  /**
-   * POST /miniapp/bots/:id/bookings/:bookingId/cancel
-   *
-   * Cancel a booking.
-   * Allowed: pending → cancelled, confirmed → cancelled
-   */
   @Post(':id/bookings/:bookingId/cancel')
   async cancelBooking(
     @Param('id') botId: string,
@@ -85,7 +75,7 @@ export class BookingLifecycleController {
         bookingId,
         body?.reason,
       );
-      return { success: true, booking };
+      return { success: true, booking: this.serializeBooking(booking) };
     } catch (error) {
       throw new BadRequestException(
         (error as Error).message || 'Failed to cancel booking',
@@ -93,12 +83,6 @@ export class BookingLifecycleController {
     }
   }
 
-  /**
-   * POST /miniapp/bots/:id/bookings/:bookingId/complete
-   *
-   * Mark a confirmed booking as completed.
-   * Allowed: confirmed → completed
-   */
   @Post(':id/bookings/:bookingId/complete')
   async completeBooking(
     @Param('id') botId: string,
@@ -109,7 +93,7 @@ export class BookingLifecycleController {
         botId,
         bookingId,
       );
-      return { success: true, booking };
+      return { success: true, booking: this.serializeBooking(booking) };
     } catch (error) {
       throw new BadRequestException(
         (error as Error).message || 'Failed to complete booking',
@@ -117,12 +101,6 @@ export class BookingLifecycleController {
     }
   }
 
-  /**
-   * POST /miniapp/bots/:id/bookings/:bookingId/no-show
-   *
-   * Mark a confirmed booking as no-show.
-   * Allowed: confirmed → no-show
-   */
   @Post(':id/bookings/:bookingId/no-show')
   async markNoShow(
     @Param('id') botId: string,
@@ -133,7 +111,7 @@ export class BookingLifecycleController {
         botId,
         bookingId,
       );
-      return { success: true, booking };
+      return { success: true, booking: this.serializeBooking(booking) };
     } catch (error) {
       throw new BadRequestException(
         (error as Error).message || 'Failed to mark no-show',
@@ -141,12 +119,6 @@ export class BookingLifecycleController {
     }
   }
 
-  /**
-   * POST /miniapp/bots/:id/bookings/:bookingId/reschedule
-   *
-   * Reschedule a booking.
-   * Allowed: pending → pending (new time), confirmed → confirmed (new time)
-   */
   @Post(':id/bookings/:bookingId/reschedule')
   async rescheduleBooking(
     @Param('id') botId: string,
@@ -166,7 +138,7 @@ export class BookingLifecycleController {
         date,
         time,
       );
-      return { success: true, booking };
+      return { success: true, booking: this.serializeBooking(booking) };
     } catch (error) {
       throw new BadRequestException(
         (error as Error).message || 'Failed to reschedule booking',

@@ -67,7 +67,7 @@ export interface OwnerModuleDefinition {
    * FALSE: template is chat-only or owner-only (e.g., lead-funnel, FAQ)
    *
    * Used by owner dashboard to show "Customer Mini App Available" indicator.
-   * No complex capability engine — just a single boolean flag.
+   * No complex template engine — just a single boolean flag.
    */
   hasCustomerMiniApp?: boolean;
 }

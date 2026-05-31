@@ -12,8 +12,8 @@ import { OwnerViewService } from '../services/owner-view.service';
  * They are template-agnostic — the same endpoints work for lead-funnel,
  * booking, AI assistant, etc.
  *
- * CAPABILITY NEUTRALITY:
- * Template-specific data comes ONLY through DashboardService + CapabilityRegistry.
+ * TEMPLATE NEUTRALITY:
+ * Template-specific data comes ONLY through DashboardService + DashboardCapabilityRegistry.
  * No direct query service injection. No template-specific branching.
  *
  * SECURITY:
@@ -34,13 +34,16 @@ export class OwnerDashboardController {
    * Universal bot overview — works for ANY template.
    * Returns: customers, interactions (template-agnostic), events, status breakdown.
    *
-   * CAPABILITY NEUTRALITY:
+   * TEMPLATE NEUTRALITY:
    * No template-specific metrics (leads, bookings) in response.
-   * Template-specific data available via capability-specific endpoints.
+   * Template-specific data available via template-specific endpoints.
    */
   @Get(':id/overview')
   async getBotOverview(@Param('id') botId: string) {
     const stats = await this.dashboardService.getBotStats(botId);
+
+    // Template-specific interactions from capability registry (e.g., bookings for booking template)
+    const templateInteractions = (stats as any)[stats.template] || 0;
 
     return {
       botId: stats.id,
@@ -49,7 +52,7 @@ export class OwnerDashboardController {
       stats: {
         customers: stats.customerCount,
         customersByStatus: stats.customersByStatus,
-        interactions: stats.customerCount, // Template-agnostic: all customers are interactions
+        interactions: templateInteractions,
         events: stats.eventCount,
       },
     };
@@ -61,19 +64,22 @@ export class OwnerDashboardController {
    * Composed operational view for a bot.
    * Includes template-specific widgets and navigation from OwnerModuleRegistry.
    *
-   * CAPABILITY NEUTRALITY:
+   * TEMPLATE NEUTRALITY:
    * Uses generic interaction count, not template-specific metrics.
    */
   @Get(':id/view')
   async getBotView(@Param('id') botId: string) {
     const stats = await this.dashboardService.getBotStats(botId);
 
+    // Template-specific interactions from capability registry
+    const templateInteractions = (stats as any)[stats.template] || 0;
+
     const view = this.ownerViewService.composeBotView(
       botId,
       stats.template,
       {
         customerCount: stats.customerCount,
-        interactionCount: stats.customerCount, // Template-agnostic
+        interactionCount: templateInteractions,
         eventCount: stats.eventCount,
       },
     );

@@ -66,7 +66,7 @@ export class OwnerViewService {
   /**
    * Compose a bot-specific operational view.
    *
-   * CAPABILITY NEUTRALITY:
+   * TEMPLATE NEUTRALITY:
    * Uses generic interaction metrics, NOT template-specific counts.
    * Template-specific labels come from OwnerModuleRegistry.
    *
