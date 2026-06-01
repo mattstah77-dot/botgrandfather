@@ -25,7 +25,6 @@ export class TicketMessage {
   id: string;
 
   @Column({ type: 'varchar' })
-  @Index()
   ticketId: string;
 
   /**

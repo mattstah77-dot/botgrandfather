@@ -14,7 +14,6 @@ import { Bot } from '../../bot/entities/bot.entity';
  * Created/updated automatically when interacting with BotGrandFather.
  */
 @Entity('owners')
-@Index(['telegramUserId'])
 export class Owner {
   @PrimaryGeneratedColumn('uuid')
   id: string;

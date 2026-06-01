@@ -3,13 +3,11 @@ import { Bot } from './bot.entity';
 
 @Entity('user_states')
 @Unique(['botId', 'userId'])
-@Index(['botId', 'userId'])
 export class UserState {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Column({ type: 'varchar' })
-  @Index()
   botId: string;
 
   @Column({ type: 'bigint' })

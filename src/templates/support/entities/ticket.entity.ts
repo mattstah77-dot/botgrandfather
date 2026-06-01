@@ -30,11 +30,9 @@ export class Ticket {
   id: string;
 
   @Column({ type: 'varchar' })
-  @Index()
   botId: string;
 
   @Column({ type: 'varchar' })
-  @Index()
   customerId: string;
 
   /**

@@ -52,7 +52,6 @@ export class ProviderAvailability {
   id: string;
 
   @Column({ type: 'varchar' })
-  @Index()
   botId: string;
 
   /**

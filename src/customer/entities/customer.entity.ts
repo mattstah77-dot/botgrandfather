@@ -18,18 +18,15 @@ import {
  * Multi-tenant: every Customer belongs to exactly one bot.
  */
 @Entity('customers')
-@Index(['botId', 'telegramUserId'])
 @Unique(['botId', 'telegramUserId'])
 export class Customer {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Column({ type: 'varchar' })
-  @Index()
   botId: string;
 
   @Column({ type: 'bigint' })
-  @Index()
   telegramUserId: bigint;
 
   @Column({ type: 'varchar', nullable: true })

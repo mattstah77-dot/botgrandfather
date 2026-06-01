@@ -40,7 +40,6 @@ export class AvailabilityExclusion {
   id: string;
 
   @Column({ type: 'varchar' })
-  @Index()
   botId: string;
 
   /**

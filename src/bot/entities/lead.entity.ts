@@ -10,11 +10,9 @@ export class Lead {
   id: string;
 
   @Column({ type: 'varchar' })
-  @Index()
   botId: string;
 
   @Column({ type: 'bigint' })
-  @Index()
   userId: bigint;
 
   @Column({ type: 'varchar', nullable: true })
@@ -27,6 +25,5 @@ export class Lead {
   contact: string | null;
 
   @CreateDateColumn()
-  @Index()
   createdAt: Date;
 }

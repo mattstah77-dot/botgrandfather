@@ -18,7 +18,6 @@ export class AnalyticsEvent {
   id: string;
 
   @Column({ type: 'varchar' })
-  @Index()
   botId: string;
 
   @Column({ type: 'varchar', nullable: true })

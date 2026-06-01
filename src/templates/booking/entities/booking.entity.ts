@@ -40,11 +40,9 @@ export class Booking {
   id: string;
 
   @Column({ type: 'varchar' })
-  @Index()
   botId: string;
 
   @Column({ type: 'bigint' })
-  @Index()
   userId: bigint;
 
   @Column({ type: 'varchar', nullable: true })
@@ -102,7 +100,6 @@ export class Booking {
   timezone: string;
 
   @CreateDateColumn()
-  @Index()
   createdAt: Date;
 
   @UpdateDateColumn()
